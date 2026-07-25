@@ -37,6 +37,9 @@ constexpr const char* kUsage =
     "  --file PATH        additional local file source (repeatable)\n"
     "  --seed PATH        curated seed dataset file (repeatable)\n"
     "  --out DIR          output directory for report/geojson (default: out)\n"
+    "  --firms            include NASA FIRMS thermal detections\n"
+    "                     (needs FIRMS_MAP_KEY; free key at\n"
+    "                      https://firms.modaps.eosdis.nasa.gov/api/map_key/)\n"
     "  --offline          skip network sources\n"
     "  --version, --help\n"
     "\n"
@@ -53,6 +56,7 @@ struct Options {
     std::vector<std::string> seeds;
     std::string out_dir = "out";
     bool offline = false;
+    bool firms = false;
 };
 
 bool parse_bbox(const std::string& s, Options& o) {
@@ -85,6 +89,7 @@ std::vector<std::unique_ptr<kst::source::Adapter>> build_adapters(
     if (!o.offline) {
         a.push_back(kst::source::make_isc());   // strike-capable route
         a.push_back(kst::source::make_usgs());  // global reference
+        if (o.firms) a.push_back(kst::source::make_firms());
     }
     for (const std::string& f : o.files) {
         a.push_back(kst::source::make_file(
@@ -121,7 +126,10 @@ int cmd_ingest(const Options& o, bool quiet = false) {
     const auto report = kst::pipeline::ingest(*db, adapters, q);
     if (!quiet) {
         for (const auto& s : report.sources) {
-            if (s.ok) {
+            if (s.ok && s.no_data) {
+                std::cout << "  " << s.source_id
+                          << ": no data in range (queried successfully)\n";
+            } else if (s.ok) {
                 std::cout << "  " << s.source_id << ": " << s.observations
                           << " observations"
                           << (s.body_was_new ? "" : "  (body deduplicated)")
@@ -229,6 +237,7 @@ int main(int argc, char** argv) {
         else if (a == "--file") o.files.push_back(next());
         else if (a == "--seed") o.seeds.push_back(next());
         else if (a == "--offline") o.offline = true;
+        else if (a == "--firms") o.firms = true;
         else if (a == "--bbox") {
             if (!parse_bbox(next(), o)) {
                 std::cerr << "kst: --bbox expects S,N,W,E\n";

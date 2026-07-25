@@ -36,6 +36,10 @@ struct Fetch {
     std::string content_type;
     long http_status = 0;
     std::string error;            // non-empty means this source failed (REQ-2.9)
+    // The service answered and had nothing in range. Distinct from failure:
+    // "no events here" and "we could not look" are different facts, and
+    // conflating them is exactly what REQ-1.6's coverage model forbids.
+    bool no_data = false;
     bool ok() const { return error.empty(); }
 };
 
@@ -67,6 +71,18 @@ std::unique_ptr<Adapter> make_usgs();
 // ISC FDSN event service, text format. Aggregates member agencies including
 // the CTBTO IDC — the route that reaches strike magnitudes (REQ-2.4, ASM-08).
 std::unique_ptr<Adapter> make_isc();
+
+// NASA FIRMS thermal anomaly detections (REQ-2.15). Space-based, so it sees
+// regions where no seismic network reports — the coverage gap that made the
+// Minab strike invisible. Requires a free MAP_KEY from
+// https://firms.modaps.eosdis.nasa.gov/api/map_key/ supplied via the
+// FIRMS_MAP_KEY environment variable; never committed (REQ-10.6).
+//
+// A thermal anomaly is NOT an explosion. FIRMS detects fire, which correlates
+// with strikes but also with agriculture, wildfire, industry, and — heavily in
+// this region — gas flaring. The adapter therefore reports 'thermal anomaly',
+// never 'explosion', and lets discrimination do its job.
+std::unique_ptr<Adapter> make_firms(std::string product = "VIIRS_SNPP_NRT");
 
 // Local files: GeoJSON, FDSN text, or curated seed JSON (REQ-2.13, REQ-2.18).
 // Granted no more trust than a network response (REQ-2.14).

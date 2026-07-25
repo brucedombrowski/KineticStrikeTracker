@@ -22,6 +22,7 @@ struct SourceResult {
     std::string error;
     std::string sha256;
     bool body_was_new = true;  // false when dedup matched (REQ-4.6)
+    bool no_data = false;      // queried successfully, nothing in range
 };
 
 struct IngestReport {

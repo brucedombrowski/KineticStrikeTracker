@@ -1,13 +1,16 @@
 #include "kst/source.hpp"
 
+#include <algorithm>
 #include <cctype>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 
 #include "kst/http.hpp"
 #include "kst/json.hpp"
+#include "kst/csv.hpp"
 #include "kst/xml.hpp"
 
 namespace kst::source {
@@ -57,6 +60,9 @@ Fetch http_fetch(const std::string& url) {
         f.http_status = r.error->status;
         return f;
     }
+    // 204 No Content: the service answered and reported nothing in range.
+    // That is an observation about the world, not a fault (REQ-2.9).
+    f.no_data = (r->status == 204) || r->body.empty();
     f.raw_body = r->body;
     f.sha256 = r->sha256;
     f.requested_at = r->requested_at;
@@ -89,7 +95,7 @@ class UsgsAdapter final : public Adapter {
             "&minlongitude=" + num(q.min_longitude) +
             "&maxlongitude=" + num(q.max_longitude);
         Fetch f = http_fetch(url);
-        if (f.ok()) f.observations = parse(f.raw_body, &f.error);
+        if (f.ok() && !f.no_data) f.observations = parse(f.raw_body, &f.error);
         return f;
     }
 
@@ -201,7 +207,7 @@ class IscAdapter final : public Adapter {
             "&minlongitude=" + num(q.min_longitude) +
             "&maxlongitude=" + num(q.max_longitude);
         Fetch f = http_fetch(url);
-        if (f.ok()) f.observations = parse(f.raw_body, &f.error);
+        if (f.ok() && !f.no_data) f.observations = parse(f.raw_body, &f.error);
         return f;
     }
 
@@ -312,6 +318,179 @@ class IscAdapter final : public Adapter {
         if (out.empty() && error) *error = "ISC response contained no events";
         return out;
     }
+};
+
+// --- NASA FIRMS thermal anomalies (REQ-2.15) ---
+
+class FirmsAdapter final : public Adapter {
+  public:
+    explicit FirmsAdapter(std::string product) : product_(std::move(product)) {}
+
+    std::string id() const override { return "firms"; }
+    SourceClass source_class() const override { return SourceClass::Instrumental; }
+    std::string data_licence() const override {
+        return "NASA FIRMS — open, free of restrictions on use; attribution "
+               "requested";
+    }
+    std::string attribution() const override {
+        return "NASA FIRMS (Fire Information for Resource Management System), "
+               "LANCE/ESDIS — " + product_;
+    }
+
+    Fetch fetch(const Query& q) const override {
+        Fetch f;
+        const char* key = std::getenv("FIRMS_MAP_KEY");
+        if (!key || !*key) {
+            f.error =
+                "FIRMS_MAP_KEY not set. Request a free key at "
+                "https://firms.modaps.eosdis.nasa.gov/api/map_key/ then export "
+                "FIRMS_MAP_KEY=<key>";
+            return f;
+        }
+        // FIRMS area order is west,south,east,north — deliberately different
+        // from our bbox order, so it is spelled out rather than passed through.
+        const std::string area =
+            num(q.min_longitude) + "," + num(q.min_latitude) + "," +
+            num(q.max_longitude) + "," + num(q.max_latitude);
+
+        // The area API accepts a 1-5 day range from a start date. Longer
+        // windows must be walked a chunk at a time; the caller sees one Fetch.
+        const auto start = model::parse_iso8601_ms(q.start_time);
+        const auto end = model::parse_iso8601_ms(q.end_time);
+        if (!start || !end || *end < *start) {
+            f.error = "FIRMS: invalid time range";
+            return f;
+        }
+        constexpr std::int64_t kDayMs = 86400000;
+        constexpr int kChunkDays = 5;   // FIRMS rejects anything above 5
+
+        std::string merged;
+        bool have_header = false;
+        int requests = 0;
+        for (std::int64_t t = *start; t <= *end; t += kDayMs * kChunkDays) {
+            const std::string day = model::format_iso8601_ms(t).substr(0, 10);
+            const std::int64_t remaining = (*end - t) / kDayMs + 1;
+            const int span = static_cast<int>(
+                std::min<std::int64_t>(kChunkDays, std::max<std::int64_t>(1, remaining)));
+            const std::string url =
+                "https://firms.modaps.eosdis.nasa.gov/api/area/csv/" +
+                url_encode(key) + "/" + url_encode(product_) + "/" + area + "/" +
+                std::to_string(span) + "/" + day;
+            Fetch part = http_fetch(url);
+            if (!part.ok()) {
+                // Partial coverage is recorded, not silently swallowed (REQ-2.9).
+                f.error = part.error + " (at " + day + ")";
+                break;
+            }
+            if (part.raw_body.rfind("Invalid MAP_KEY", 0) == 0) {
+                f.error = "FIRMS rejected the MAP_KEY";
+                return f;
+            }
+            if (f.requested_at.empty()) f.requested_at = part.requested_at;
+            f.request_url = url;   // last request; each is logged by the caller
+            std::string_view body = part.raw_body;
+            if (have_header) {
+                const std::size_t nl = body.find('\n');
+                if (nl != std::string_view::npos) body.remove_prefix(nl + 1);
+            }
+            have_header = true;
+            merged.append(body);
+            if (++requests > 200) break;   // guard against absurd spans
+        }
+        f.raw_body = merged;
+        f.sha256 = http::sha256_hex(merged);
+        f.content_type = "text/csv";
+        f.http_status = 200;
+        if (!merged.empty()) {
+            std::string perr;
+            f.observations = parse(merged, &perr);
+            if (f.error.empty()) f.error = perr;
+        }
+        return f;
+    }
+
+    std::vector<Observation> parse(std::string_view body,
+                                   std::string* error) const override {
+        std::vector<Observation> out;
+        auto t = csv::parse(body);
+        if (!t) {
+            if (error) *error = "FIRMS CSV parse failed: " + t.error->message;
+            return out;
+        }
+        if (!t->has_column("latitude") || !t->has_column("acq_date")) {
+            if (error) *error = "FIRMS CSV missing expected columns";
+            return out;
+        }
+        // Brightness column differs by instrument; both are retained as the
+        // published value and never converted (REQ-3.4).
+        const bool viirs = t->has_column("bright_ti4");
+        for (std::size_t r = 0; r < t->rows(); ++r) {
+            auto num_of = [&](const char* col) -> std::optional<double> {
+                const std::string_view v = t->get(r, col);
+                if (v.empty()) return std::nullopt;
+                try {
+                    return std::stod(std::string(v));
+                } catch (...) {
+                    return std::nullopt;
+                }
+            };
+            Observation o;
+            o.source_id = id();
+            o.source_class = source_class();
+
+            const auto lat = num_of("latitude");
+            const auto lon = num_of("longitude");
+            const std::string date(t->get(r, "acq_date"));
+            std::string hhmm(t->get(r, "acq_time"));   // "HHMM", may lack a zero
+            if (!lat || !lon || date.size() != 10) continue;   // REQ-3.7
+            while (hhmm.size() < 4) hhmm.insert(hhmm.begin(), '0');
+            o.origin_time = date + "T" + hhmm.substr(0, 2) + ":" +
+                            hhmm.substr(2, 2) + ":00.000Z";
+            if (!model::parse_iso8601_ms(o.origin_time)) continue;
+
+            if (!model::latitude_valid(*lat)) continue;
+            o.latitude = *lat;
+            o.longitude = model::normalise_longitude(*lon);
+
+            // A satellite detection has no depth. Leaving it unset is correct
+            // and keeps the depth discriminant from firing on it (REQ-5.2).
+            const std::string sat(t->get(r, "satellite"));
+            const std::string inst(t->get(r, "instrument"));
+            o.author = inst.empty() ? sat : (inst + "/" + sat);
+            o.native_id = date + "_" + hhmm + "_" + std::string(t->get(r, "latitude")) +
+                          "_" + std::string(t->get(r, "longitude")) + "_" + o.author;
+            o.observation_uid = model::observation_uid(o.source_id, o.native_id);
+
+            // NOT 'explosion'. FIRMS observes radiant heat, not a cause.
+            o.reported_event_type = "thermal anomaly";
+            o.type_certainty = std::string(t->get(r, "confidence"));
+
+            // Pixel footprint as a location uncertainty: VIIRS I-band is
+            // nominally 375 m, MODIS 1 km, both degrading off-nadir. Reporting
+            // the scan-scaled footprint is more honest than reporting nothing
+            // (REQ-7.8).
+            const double base_km = viirs ? 0.375 : 1.0;
+            const auto scan = num_of("scan");
+            o.location_uncertainty_km = base_km * (scan && *scan > 0 ? *scan : 1.0);
+
+            const auto frp = num_of("frp");
+            const auto bright = num_of(viirs ? "bright_ti4" : "brightness");
+            std::string desc = "thermal anomaly";
+            if (frp) desc += ", FRP " + std::to_string(static_cast<int>(*frp)) + " MW";
+            if (bright) {
+                desc += ", brightness " +
+                        std::to_string(static_cast<int>(*bright)) + " K";
+            }
+            const std::string dn(t->get(r, "daynight"));
+            if (!dn.empty()) desc += (dn == "N" ? ", night overpass" : ", day overpass");
+            o.description = desc;
+            out.push_back(std::move(o));
+        }
+        return out;
+    }
+
+  private:
+    std::string product_;
 };
 
 // --- Local files (REQ-2.13, REQ-2.14, REQ-2.18) ---
@@ -454,6 +633,10 @@ class FileAdapter final : public Adapter {
 
 std::unique_ptr<Adapter> make_usgs() { return std::make_unique<UsgsAdapter>(); }
 std::unique_ptr<Adapter> make_isc() { return std::make_unique<IscAdapter>(); }
+
+std::unique_ptr<Adapter> make_firms(std::string product) {
+    return std::make_unique<FirmsAdapter>(std::move(product));
+}
 
 std::unique_ptr<Adapter> make_file(std::string path, std::string source_id,
                                    SourceClass cls, bool curated) {

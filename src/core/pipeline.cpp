@@ -77,6 +77,7 @@ IngestReport ingest(db::Database& database,
             continue;
         }
         sr.sha256 = f.sha256;
+        sr.no_data = f.no_data;
 
         // Content-addressed body: stored once (REQ-4.6).
         if (auto exists = database.prepare(
@@ -208,6 +209,14 @@ std::vector<Coverage> coverage_notes(
                 "does detect surface events at munition scale. Reviewed "
                 "bulletin lags roughly 24 months; contributed preliminary "
                 "data arrives sooner.";
+        } else if (c.source_id == "firms") {
+            c.note =
+                "Space-based thermal detection; independent of any ground "
+                "network, so it sees regions where no seismic agency reports. "
+                "Detects FIRE, not explosions - agriculture, industry and gas "
+                "flaring dominate this signal in many regions. Sees only what "
+                "was burning when a satellite passed over, roughly twice daily, "
+                "and cloud blocks it.";
         } else {
             c.note = "Coverage not characterised.";
         }

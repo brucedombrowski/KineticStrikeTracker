@@ -3,6 +3,7 @@
 configure_file(kst/version.hpp.in generated/kst/version.hpp @ONLY)
 
 add_library(kst_core STATIC
+    csv.cpp
     db.cpp
     analysis.cpp
     pipeline.cpp
