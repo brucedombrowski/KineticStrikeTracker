@@ -8,6 +8,10 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
+- REQ-2026-001 v0.3.1: `open_questions` now holds ONLY unresolved items so the count is
+  meaningful and drivable to zero (currently **0**); the seven answered questions move to
+  a `resolved_questions` archive with their resolutions. Viewer reports "none outstanding"
+  and collapses the archive.
 - REQ-2026-001 v0.3.0 (issue #20, DM-2026-005): RFC 9562 replaces obsoleted RFC 4122
   (pinned to name-based UUIDv5 — time-ordered variants excluded for determinism),
   ISO/IEC 25010:2023 and NIST SP 800-53 Rev. 5 pinned, RFC 8446 added as TLS baseline
@@ -15,6 +19,10 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   for v1 with recorded rationale. 104 requirements, 17 standards.
 
 ### Changed
+- REQ-2026-001 v0.3.1: `open_questions` now holds ONLY unresolved items so the count is
+  meaningful and drivable to zero (currently **0**); the seven answered questions move to
+  a `resolved_questions` archive with their resolutions. Viewer reports "none outstanding"
+  and collapses the archive.
 - REQ-2026-001 bumped to v0.2.0 applying the human review received as issue #2 — all seven
   open questions resolved. REQ-1.1 (whole-Earth model), REQ-2.4 (ISC as the seismic
   aggregation route; direct IRSC excluded by its no-redistribution licence), and REQ-9.6

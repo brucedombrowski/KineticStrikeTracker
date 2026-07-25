@@ -2,7 +2,7 @@
   "document_id": "REQ-2026-001",
   "title": "Kinetic Strike Tracker — Requirements Specification",
   "project": "KineticStrikeTracker",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "status": "draft-pending-human-review",
   "date": "2026-07-25",
   "author": "AI agent (Claude), drafted for human review",
@@ -13,7 +13,8 @@
     "Per SE process principle 1 (review over authoring), this document is a DRAFT. It becomes the v1.0 baseline only after human review and an approving commit.",
     "Requirement IDs are stable per IEEE 29148. Do not renumber; deprecate instead.",
     "Priority values: mandatory (SHALL), recommended (SHOULD), optional (MAY). Per BCP 14 (RFC 8174), keywords are normative only when written in ALL CAPS; lowercase instances of these words in rationale, notes, and prose carry no normative weight.",
-    "Verification methods: inspection, test, analysis, demonstration — per the taxonomy defined in NPR 7123.1 (and equivalently MIL-STD-961E)."
+    "Verification methods: inspection, test, analysis, demonstration — per the taxonomy defined in NPR 7123.1 (and equivalently MIL-STD-961E).",
+    "open_questions contains ONLY unresolved items — the count is meant to be driven to zero. Resolved items move to resolved_questions with their resolution and the decision memorandum that records it; nothing is deleted. New questions are expected to appear as implementation proceeds; the goal is that they are answered, not that they never arise."
   ],
   "governing_standards": [
     {
@@ -1118,41 +1119,42 @@
       ]
     }
   ],
-  "open_questions": [
+  "open_questions": [],
+  "resolved_questions": [
     {
       "id": "OQ-01",
       "question": "Build system: hand-written Makefile (zero install, satisfies REQ-9.6 today) versus CMake (conventional for C++, better path to a future WASM or cross-platform build, but requires installing cmake, which is not currently present on the target machine).",
-      "disposition": "RESOLVED 2026-07-25 (review issue #2): CMake approved for install on the target environment. Recorded in DM-2026-001; REQ-9.6 amended."
+      "resolution": "(review issue #2): CMake approved for install on the target environment. Recorded in DM-2026-001; REQ-9.6 amended."
     },
     {
       "id": "OQ-02",
       "question": "Which OSI-approved licence. Open source is decided (REQ-13.1); the specific licence is not. Apache-2.0 provides an express patent grant and a contributor patent-retaliation clause, which suits a publicly developed tool in a defence-adjacent domain; MIT is shorter and more permissive but grants no patent rights.",
-      "disposition": "RESOLVED 2026-07-25: Apache-2.0, by human directive. Recorded in DM-2026-002; LICENSE file added."
+      "resolution": "Apache-2.0, by human directive. Recorded in DM-2026-002; LICENSE file added."
     },
     {
       "id": "OQ-06",
       "question": "Whether independent triangulation (REQ-5.8, REQ-5.9) is in scope for v1 or deferred. It is the capability that reaches below catalog threshold per ASM-01b, and is therefore the difference between a catalog aggregator and a detection system — but it is also, by a wide margin, the largest single body of work in this specification.",
-      "disposition": "RESOLVED 2026-07-25 (review issue #2): independent triangulation deferred from v1; tracked on the backlog (GitHub issue). REQ-5.8/5.9 remain recommended for a future release."
+      "resolution": "(review issue #2): independent triangulation deferred from v1; tracked on the backlog (GitHub issue). REQ-5.8/5.9 remain recommended for a future release."
     },
     {
       "id": "OQ-07",
       "question": "Whether IRSC exposes a machine-readable interface, or whether regional catalog access requires HTML scraping or a federated FDSN data centre intermediary. REQ-2.4 is mandatory but its implementation route is unverified.",
-      "disposition": "RESOLVED 2026-07-25 (review issue #2, agent research spike): ISC FDSN event service is the aggregation route — returns IDC (CTBTO), NEIC, and regional-agency origins for the region; 13 depth-0.0 IDC detections on June 2025 strike nights confirm reachability of strike-scale events. Direct IRSC access excluded: data-use agreement prohibits redistribution. REQ-2.4 amended; evidence committed."
+      "resolution": "(review issue #2, agent research spike): ISC FDSN event service is the aggregation route — returns IDC (CTBTO), NEIC, and regional-agency origins for the region; 13 depth-0.0 IDC detections on June 2025 strike nights confirm reachability of strike-scale events. Direct IRSC access excluded: data-use agreement prohibits redistribution. REQ-2.4 amended; evidence committed."
     },
     {
       "id": "OQ-03",
       "question": "Precise region-of-interest bounding box, and whether it is fixed or user-configurable per run.",
-      "disposition": "RESOLVED 2026-07-25 (review issue #2): whole-Earth data model with configurable ROI; explicit coverage model with greyed-out no-coverage regions. REQ-1.1 amended; REQ-1.6 and REQ-8.8 added."
+      "resolution": "(review issue #2): whole-Earth data model with configurable ROI; explicit coverage model with greyed-out no-coverage regions. REQ-1.1 amended; REQ-1.6 and REQ-8.8 added."
     },
     {
       "id": "OQ-04",
       "question": "Whether v1 includes any news or social ingestion at all, or defers all of source class D and E to v2. REQ-2.7 currently makes it optional.",
-      "disposition": "RESOLVED 2026-07-25 (review issue #2): v1 bootstraps from a hand-curated seed dataset of known events (REQ-2.18); automated news/social gathering decided later. REQ-2.7 remains optional."
+      "resolution": "(review issue #2): v1 bootstraps from a hand-curated seed dataset of known events (REQ-2.18); automated news/social gathering decided later. REQ-2.7 remains optional."
     },
     {
       "id": "OQ-05",
       "question": "Whether the confidence assessment is emitted as a numeric score or as ordinal bands. Ordinal bands resist false precision; numeric scores sort and threshold more naturally.",
-      "disposition": "RESOLVED 2026-07-25 (review issue #2): design for representation change — store factors, derive presentation (REQ-7.7). Numeric-vs-ordinal choice deferred without risk."
+      "resolution": "(review issue #2): design for representation change — store factors, derive presentation (REQ-7.7). Numeric-vs-ordinal choice deferred without risk."
     }
   ],
   "deferred_to_future_release": [

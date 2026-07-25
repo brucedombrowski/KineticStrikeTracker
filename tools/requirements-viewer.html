@@ -218,20 +218,47 @@ function render(d) {
   );
   $("#controls").classList.remove("hidden");
 
-  // Open questions first — reviewer decisions live here
+  // Open questions first — reviewer decisions live here. Target: zero.
   const oq = $("#openq");
-  oq.append(el("h2", null, "Open Questions — review these first"));
-  for (const q of d.open_questions) {
-    const resolved = q.disposition.startsWith("RESOLVED");
-    const box = el("div", "oq" + (resolved ? " resolved" : ""));
+  const open = d.open_questions || [];
+  const done = d.resolved_questions || [];
+  oq.append(el("h2", null, "Open Questions — " + (open.length || "none") +
+    (open.length ? " awaiting your decision" : " outstanding")));
+  if (!open.length) {
+    const clear = el("div", "oq resolved");
+    clear.append(el("span", "oq-id", "✅ Nothing open. "),
+      el("span", null, done.length
+        ? done.length + " question" + (done.length === 1 ? "" : "s") +
+          " resolved and archived below."
+        : "No questions have been raised."));
+    oq.append(clear);
+  }
+  for (const q of open) {
+    const box = el("div", "oq");
     box.append(
-      el("span", "oq-id", (resolved ? "✅ " : "🔲 ") + q.id + " — "),
+      el("span", "oq-id", "🔲 " + q.id + " — "),
       el("span", null, q.question),
       el("div", "aux")
     );
     box.lastChild.append(el("b", null, "Disposition: "), el("span", null, q.disposition));
     annotate(box, q.id);
     oq.append(box);
+  }
+  if (done.length) {
+    const det = el("details", "cat");
+    const sum = el("summary");
+    sum.append(el("span", null, "Resolved questions"),
+      el("span", "catcount", done.length + " archived"));
+    det.append(sum);
+    for (const q of done) {
+      const box = el("div", "oq resolved");
+      box.append(el("span", "oq-id", "✅ " + q.id + " — "), el("span", null, q.question));
+      const aux = el("div", "aux");
+      aux.append(el("b", null, "Resolution: "), el("span", null, q.resolution || q.disposition || ""));
+      box.append(aux);
+      det.append(box);
+    }
+    oq.append(det);
   }
 
   // Assumptions
