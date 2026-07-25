@@ -266,9 +266,13 @@ class IscAdapter final : public Adapter {
             // solved depth ("from location", "constrained by depth phases")
             // from one an operator or default supplied. No value-guessing.
             const std::string dtype = origin->text_of("depthType");
-            o.depth_is_fixed = (dtype == "operator assigned" ||
-                                dtype == "constrained by prior knowledge" ||
-                                dtype == "other");
+            // REQ-5.2: the discriminant applies ONLY where the source says
+            // the depth was solved. An ABSENT depthType is not a claim that
+            // it was — silence is treated as unknown provenance, not as
+            // permission.
+            o.depth_is_fixed = dtype.empty() || dtype == "operator assigned" ||
+                               dtype == "constrained by prior knowledge" ||
+                               dtype == "other";
             o.depth_type = dtype;
 
             // Location uncertainty, metres to kilometres. The ellipse
@@ -292,10 +296,17 @@ class IscAdapter final : public Adapter {
             if (const xml::Element* desc = ev->child("description")) {
                 o.description = desc->text_of("text");
             }
-            o.reported_event_type = ev->text_of("type");
+            // Direct children only: a depth-first search would find
+            // <description><type>Flinn-Engdahl region</type></description>
+            // first and silently mislabel every event (REQ-3.6).
+            if (const xml::Element* et = ev->child("type")) {
+                o.reported_event_type = et->text;
+            }
             // ISC's own confidence in the event type — 'suspected' vs
             // 'known'. Retained as published (REQ-3.6).
-            o.type_certainty = ev->text_of("typeCertainty");
+            if (const xml::Element* tc = ev->child("typeCertainty")) {
+                o.type_certainty = tc->text;
+            }
             out.push_back(std::move(o));
         }
         if (out.empty() && error) *error = "ISC response contained no events";

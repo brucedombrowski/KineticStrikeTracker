@@ -116,8 +116,8 @@ IngestReport ingest(db::Database& database,
                 "native_id,origin_time,latitude,longitude,depth_km,"
                 "depth_is_fixed,magnitude,magnitude_type,reported_event_type,"
                 "description,is_curated,location_uncertainty_km,depth_type,"
-                "type_certainty) "
-                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
+                "type_certainty,author) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
                 "ON CONFLICT(source_id,native_id) DO UPDATE SET "
                 "origin_time=excluded.origin_time,latitude=excluded.latitude,"
                 "longitude=excluded.longitude,depth_km=excluded.depth_km,"
@@ -128,7 +128,7 @@ IngestReport ingest(db::Database& database,
                 "description=excluded.description,"
                 "location_uncertainty_km=excluded.location_uncertainty_km,"
                 "depth_type=excluded.depth_type,"
-                "type_certainty=excluded.type_certainty");
+                "type_certainty=excluded.type_certainty,author=excluded.author");
             if (!up) continue;
             up->bind(1, o.observation_uid)
                 .bind(2, o.source_id)
@@ -146,7 +146,7 @@ IngestReport ingest(db::Database& database,
                 .bind(14, static_cast<std::int64_t>(o.is_curated ? 1 : 0));
             o.location_uncertainty_km ? up->bind(15, *o.location_uncertainty_km)
                                       : up->bind_null(15);
-            up->bind(16, o.depth_type).bind(17, o.type_certainty);
+            up->bind(16, o.depth_type).bind(17, o.type_certainty).bind(18, o.author);
             if (up->execute()) ++sr.observations;
         }
         report.total_observations += sr.observations;
@@ -161,7 +161,7 @@ std::vector<model::Observation> load_observations(db::Database& database) {
         "SELECT observation_uid,source_id,source_class,native_id,origin_time,"
         "latitude,longitude,depth_km,depth_is_fixed,magnitude,magnitude_type,"
         "reported_event_type,description,is_curated,"
-        "location_uncertainty_km,depth_type,type_certainty FROM observation "
+        "location_uncertainty_km,depth_type,type_certainty,author FROM observation "
         "ORDER BY origin_time, observation_uid");  // canonical (REQ-6.3)
     if (!q) return out;
     while (q->step()) {
@@ -185,6 +185,7 @@ std::vector<model::Observation> load_observations(db::Database& database) {
         if (!q->column_is_null(14)) o.location_uncertainty_km = q->column_double(14);
         o.depth_type = q->column_text(15);
         o.type_certainty = q->column_text(16);
+        o.author = q->column_text(17);
         out.push_back(std::move(o));
     }
     return out;
@@ -256,7 +257,17 @@ std::string to_geojson(const std::vector<analysis::Event>& events,
             }
             if (c.depth_km) {
                 o << ", \"depth_km\": " << fixed(*c.depth_km, 1)
-                  << ", \"depth_is_fixed\": " << (c.depth_is_fixed ? "true" : "false");
+                  << ", \"depth_is_fixed\": " << (c.depth_is_fixed ? "true" : "false")
+                  << ", \"depth_type\": \"" << json_escape(c.depth_type) << "\"";
+            }
+            // Uncertainty is the field that decides whether a position means
+            // anything (REQ-7.8, REQ-8.7) — it belongs in the payload.
+            if (c.location_uncertainty_km) {
+                o << ", \"location_uncertainty_km\": "
+                  << fixed(*c.location_uncertainty_km, 1);
+            }
+            if (!c.type_certainty.empty()) {
+                o << ", \"type_certainty\": \"" << json_escape(c.type_certainty) << "\"";
             }
             o << ", \"author\": \"" << json_escape(c.author) << "\"}"
               << (j + 1 < e.constituents.size() ? "," : "") << "\n";

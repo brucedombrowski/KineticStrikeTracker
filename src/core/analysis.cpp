@@ -76,10 +76,13 @@ Discrimination discriminate(const model::Observation& o) {
     if (!o.depth_km.has_value()) {
         d.reasons.push_back("no depth published; depth discriminant not applied");
     } else if (o.depth_is_fixed) {
+        const std::string why =
+            o.depth_type.empty()
+                ? "the source does not say how this depth was determined"
+                : "the source declares this depth '" + o.depth_type + "'";
         d.reasons.push_back(
-            "depth " + std::to_string(static_cast<int>(*o.depth_km)) +
-            " km is an agency default, not a constrained measurement; "
-            "depth discriminant not applied (REQ-5.2)");
+            "depth " + std::to_string(static_cast<int>(*o.depth_km)) + " km: " +
+            why + "; depth discriminant not applied (REQ-5.2)");
     } else {
         d.depth_discriminant_applied = true;
         if (*o.depth_km <= 1.0) {

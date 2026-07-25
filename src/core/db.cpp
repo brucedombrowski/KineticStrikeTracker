@@ -123,6 +123,7 @@ constexpr std::array<const char*, 2> kMigrations = {
     R"SQL(
     ALTER TABLE observation ADD COLUMN depth_type TEXT;
     ALTER TABLE observation ADD COLUMN type_certainty TEXT;
+    ALTER TABLE observation ADD COLUMN author TEXT;
     )SQL",
 };
 
