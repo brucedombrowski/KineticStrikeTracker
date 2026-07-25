@@ -30,6 +30,13 @@
   .border{fill:none;stroke:var(--muted);stroke-width:.6;opacity:.55;
           stroke-dasharray:2.5 1.8;vector-effect:non-scaling-stroke}
   .grat{stroke:var(--line);stroke-width:.4;fill:none;opacity:.5;vector-effect:non-scaling-stroke}
+  .refpt{fill:none;stroke:#00b0b0;stroke-width:1.6;vector-effect:non-scaling-stroke}
+  .reflbl{fill:#00b0b0;font-size:9px;paint-order:stroke;stroke:var(--sea);stroke-width:2.5px}
+  .ring{fill:none;stroke:#00b0b0;stroke-width:.8;opacity:.45;stroke-dasharray:4 3;
+        vector-effect:non-scaling-stroke}
+  .ringlbl{fill:#00b0b0;font-size:8px;opacity:.8;paint-order:stroke;stroke:var(--sea);stroke-width:2.5px}
+  .rangeline{stroke:#00b0b0;stroke-width:.9;opacity:.5;stroke-dasharray:3 2;
+             vector-effect:non-scaling-stroke}
   .unc{fill:currentColor;opacity:.10;stroke:currentColor;stroke-opacity:.35;
        stroke-width:.7;vector-effect:non-scaling-stroke}
   .pt{stroke:#000;stroke-opacity:.35;stroke-width:.6;vector-effect:non-scaling-stroke;cursor:pointer}
@@ -83,6 +90,8 @@
   <div id="controls">
     <label><input type="checkbox" id="showUnc" checked> show location uncertainty</label>
     <label><input type="checkbox" id="hideUnusable"> hide location=unusable</label>
+    <label><input type="checkbox" id="showRef"> reference layer</label>
+    <label><input type="checkbox" id="showRings"> distance rings</label>
     <button id="fit">fit to events</button>
     <button id="world">world</button>
   </div>
@@ -138,6 +147,7 @@ function drawBase(){
   }
 }
 let events=[], layer=null, visible=[];
+let refPoints=[], refLayer=null;
 let prevNow=-1, prevFade=0, prevStatic=false;
 // Time-lapse state. `cursor` is a fraction of the span; events older than the
 // cursor persist but fade, so the accumulating pattern stays visible rather
@@ -344,6 +354,74 @@ svg.addEventListener("wheel",e=>{
   view.x+=view.w*fx*(1-k); view.y+=view.h*fy*(1-k);
   view.w*=k; view.h*=k; applyView(); draw();
 },{passive:false});
+// --- reference layer: named sites, distance rings, range lines (context only,
+// never attribution — see data/reference/README.md) ---
+function refAnchor(){
+  // Anchor rings/lines on the curated (human-defined) event when present,
+  // otherwise the geographic centre of the events.
+  const seed=events.find(e=>e.cons.some(c=>c.class==="C"));
+  if(seed) return {lat:seed.lat, lon:seed.lon, label:"event"};
+  if(!events.length) return null;
+  return {lat:events.reduce((s,e)=>s+e.lat,0)/events.length,
+          lon:events.reduce((s,e)=>s+e.lon,0)/events.length, label:"centre"};
+}
+function drawReference(){
+  if(refLayer) refLayer.remove();
+  refLayer=null;
+  if(!$("#showRef").checked && !$("#showRings").checked) return;
+  refLayer=el("g"); scene.append(refLayer);
+  const a=refAnchor();
+  const dpp=degPerPx();
+
+  if(a && $("#showRings").checked){
+    for(const km of [100,200,300,500,1000]){
+      const ry=kmToDegLat(km);
+      const c=el("ellipse");
+      c.setAttribute("cx",a.lon); c.setAttribute("cy",-a.lat);
+      c.setAttribute("ry",ry);
+      c.setAttribute("rx",ry/Math.max(.15,Math.cos(a.lat*Math.PI/180)));
+      c.setAttribute("class","ring"); refLayer.append(c);
+      const t=el("text");
+      t.setAttribute("x",a.lon); t.setAttribute("y",-(a.lat+ry)-2*dpp);
+      t.setAttribute("text-anchor","middle");
+      t.setAttribute("class","ringlbl");
+      t.setAttribute("font-size",(8*dpp));
+      t.textContent=km+" km";
+      refLayer.append(t);
+    }
+  }
+  if($("#showRef").checked){
+    for(const p of refPoints){
+      if(a){   // range line from the anchor to each site
+        const l=el("line");
+        l.setAttribute("x1",a.lon); l.setAttribute("y1",-a.lat);
+        l.setAttribute("x2",p.lon); l.setAttribute("y2",-p.lat);
+        l.setAttribute("class","rangeline"); refLayer.append(l);
+      }
+      const g=el("g");
+      const r=4*dpp;
+      const tri=el("path");
+      tri.setAttribute("d",`M${p.lon},${-p.lat-r} L${p.lon+r},${-p.lat+r*0.8} L${p.lon-r},${-p.lat+r*0.8} Z`);
+      tri.setAttribute("class","refpt"); g.append(tri);
+      const t=el("text");
+      t.setAttribute("x",p.lon+r*1.4); t.setAttribute("y",-p.lat+r*0.6);
+      t.setAttribute("class","reflbl"); t.setAttribute("font-size",(9*dpp));
+      t.textContent = p.km!=null ? `${p.name} — ${p.km} km` : p.name;
+      g.append(t);
+      refLayer.append(g);
+    }
+  }
+}
+$("#showRef").onchange=()=>{loadRef().then(drawReference)};
+$("#showRings").onchange=drawReference;
+let refLoaded=false;
+function loadRef(){
+  if(refLoaded) return Promise.resolve();
+  return fetch("../data/reference/seismic-stations-hormuz.json")
+    .then(r=>r.ok?r.json():[]).then(j=>{refPoints=j; refLoaded=true;})
+    .catch(()=>{refPoints=[];refLoaded=true;});
+}
+
 // --- playback ---
 function setCursor(c){
   cursor=Math.max(0,Math.min(1,c));

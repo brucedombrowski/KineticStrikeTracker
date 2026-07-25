@@ -1,0 +1,322 @@
+[
+ {
+  "name": "II.UOSS",
+  "lat": 24.9453,
+  "lon": 56.2042,
+  "category": "seismic station",
+  "km": 260,
+  "note": "Univ. of Sharjah, Sharjah, United Arab Emirates"
+ },
+ {
+  "name": "7F.A00",
+  "lat": 22.881217,
+  "lon": 58.700583,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A00"
+ },
+ {
+  "name": "7F.A01",
+  "lat": 22.881267,
+  "lon": 58.70056,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A01"
+ },
+ {
+  "name": "7F.A02",
+  "lat": 22.881261,
+  "lon": 58.700619,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A02"
+ },
+ {
+  "name": "7F.A03",
+  "lat": 22.88121,
+  "lon": 58.700641,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A03"
+ },
+ {
+  "name": "7F.A04",
+  "lat": 22.881167,
+  "lon": 58.700606,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A04"
+ },
+ {
+  "name": "7F.A05",
+  "lat": 22.881173,
+  "lon": 58.700547,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A05"
+ },
+ {
+  "name": "7F.A06",
+  "lat": 22.881224,
+  "lon": 58.700524,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A06"
+ },
+ {
+  "name": "7F.A07",
+  "lat": 22.881372,
+  "lon": 58.700578,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A07"
+ },
+ {
+  "name": "7F.A08",
+  "lat": 22.881284,
+  "lon": 58.700712,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A08"
+ },
+ {
+  "name": "7F.A09",
+  "lat": 22.881155,
+  "lon": 58.700776,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A09"
+ },
+ {
+  "name": "7F.A10",
+  "lat": 22.881047,
+  "lon": 58.700595,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A10"
+ },
+ {
+  "name": "7F.A11",
+  "lat": 22.881121,
+  "lon": 58.700439,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A11"
+ },
+ {
+  "name": "7F.A12",
+  "lat": 22.881284,
+  "lon": 58.700429,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A12"
+ },
+ {
+  "name": "7F.A13",
+  "lat": 22.881412,
+  "lon": 58.700699,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A13"
+ },
+ {
+  "name": "7F.A14",
+  "lat": 22.881269,
+  "lon": 58.700869,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A14"
+ },
+ {
+  "name": "7F.A15",
+  "lat": 22.881012,
+  "lon": 58.700784,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A15"
+ },
+ {
+  "name": "7F.A16",
+  "lat": 22.880943,
+  "lon": 58.700498,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A16"
+ },
+ {
+  "name": "7F.A17",
+  "lat": 22.881146,
+  "lon": 58.700289,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A17"
+ },
+ {
+  "name": "7F.A18",
+  "lat": 22.881433,
+  "lon": 58.700362,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A18"
+ },
+ {
+  "name": "7F.A19",
+  "lat": 22.881751,
+  "lon": 58.70034,
+  "category": "seismic station",
+  "km": 501,
+  "note": "A19"
+ },
+ {
+  "name": "7F.B00",
+  "lat": 22.882312,
+  "lon": 58.700085,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B00"
+ },
+ {
+  "name": "7F.B01",
+  "lat": 22.882361,
+  "lon": 58.700063,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B01"
+ },
+ {
+  "name": "7F.B02",
+  "lat": 22.882352,
+  "lon": 58.700118,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B02"
+ },
+ {
+  "name": "7F.B03",
+  "lat": 22.882305,
+  "lon": 58.700146,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B03"
+ },
+ {
+  "name": "7F.B04",
+  "lat": 22.882262,
+  "lon": 58.700108,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B04"
+ },
+ {
+  "name": "7F.B05",
+  "lat": 22.882268,
+  "lon": 58.700049,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B05"
+ },
+ {
+  "name": "7F.B06",
+  "lat": 22.882319,
+  "lon": 58.700026,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B06"
+ },
+ {
+  "name": "7F.B07",
+  "lat": 22.882471,
+  "lon": 58.700079,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B07"
+ },
+ {
+  "name": "7F.B08",
+  "lat": 22.882395,
+  "lon": 58.700235,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B08"
+ },
+ {
+  "name": "7F.B09",
+  "lat": 22.882233,
+  "lon": 58.700242,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B09"
+ },
+ {
+  "name": "7F.B10",
+  "lat": 22.882155,
+  "lon": 58.700096,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B10"
+ },
+ {
+  "name": "7F.B11",
+  "lat": 22.88224,
+  "lon": 58.699977,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B11"
+ },
+ {
+  "name": "7F.B12",
+  "lat": 22.882371,
+  "lon": 58.699951,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B12"
+ },
+ {
+  "name": "7F.B13",
+  "lat": 22.882573,
+  "lon": 58.700235,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B13"
+ },
+ {
+  "name": "7F.B14",
+  "lat": 22.882369,
+  "lon": 58.700384,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B14"
+ },
+ {
+  "name": "7F.B15",
+  "lat": 22.882108,
+  "lon": 58.700286,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B15"
+ },
+ {
+  "name": "7F.B16",
+  "lat": 22.882017,
+  "lon": 58.699991,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B16"
+ },
+ {
+  "name": "7F.B17",
+  "lat": 22.882213,
+  "lon": 58.699775,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B17"
+ },
+ {
+  "name": "7F.B18",
+  "lat": 22.882492,
+  "lon": 58.699902,
+  "category": "seismic station",
+  "km": 501,
+  "note": "B18"
+ }
+]
