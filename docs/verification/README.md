@@ -10,7 +10,7 @@ location and its verifying test:
 requirement → file → line → verification method → evidence
 ```
 
-Verification methods: inspection, test, analysis, demonstration.
+Verification methods per NPR 7123.1 (equivalently MIL-STD-961E): inspection, test, analysis, demonstration.
 
 Empty until implementation begins. The verification matrix (`mapping.json`) is generated from the
 requirements document and maintained alongside implementation, not retrofitted at the end.

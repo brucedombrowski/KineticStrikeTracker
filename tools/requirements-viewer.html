@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>REQ-2026-001 — Requirements Viewer</title>
+<style>
+  /* Viewer only — contains no requirement content. Fetches ../requirements/REQ-2026-001.json.
+     Serve over HTTP (e.g. `python3 -m http.server` from repo root); file:// blocks fetch. */
+  :root {
+    --bg: #ffffff; --fg: #1a1a2e; --muted: #5a5a72; --line: #d8d8e4;
+    --card: #f6f6fa; --accent: #2b4c7e;
+    --shall: #a01515; --should: #8a5a00; --may: #3d6b35;
+    --open: #8a5a00; --resolved: #3d6b35;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14141c; --fg: #e8e8f0; --muted: #9a9ab0; --line: #34344a;
+      --card: #1d1d29; --accent: #8fb4e8;
+      --shall: #ff8080; --should: #e8b34d; --may: #90c88a;
+      --open: #e8b34d; --resolved: #90c88a;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+         font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  main { max-width: 60rem; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+  h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
+  h2 { font-size: 1.15rem; margin: 2rem 0 .5rem; border-bottom: 1px solid var(--line);
+       padding-bottom: .3rem; }
+  .meta { color: var(--muted); font-size: .85rem; margin-bottom: 1rem; }
+  .meta code { background: var(--card); padding: .1em .4em; border-radius: 4px; }
+  #controls { position: sticky; top: 0; background: var(--bg); padding: .75rem 0;
+              border-bottom: 1px solid var(--line); display: flex; gap: .6rem;
+              flex-wrap: wrap; align-items: center; z-index: 5; }
+  #search { flex: 1 1 14rem; padding: .45rem .6rem; border: 1px solid var(--line);
+            border-radius: 6px; background: var(--card); color: var(--fg); font-size: .95rem; }
+  .pbtn { border: 1px solid var(--line); background: var(--card); color: var(--fg);
+          border-radius: 999px; padding: .3rem .8rem; font-size: .8rem; cursor: pointer; }
+  .pbtn.on { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  #count { color: var(--muted); font-size: .8rem; margin-left: auto; }
+  .req { background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+         padding: .7rem .9rem; margin: .6rem 0; }
+  .req-head { display: flex; gap: .6rem; align-items: baseline; flex-wrap: wrap; }
+  .req-id { font-weight: 700; font-family: ui-monospace, Menlo, monospace; }
+  .badge { font-size: .7rem; font-weight: 700; letter-spacing: .04em; padding: .1em .5em;
+           border-radius: 4px; border: 1px solid currentColor; }
+  .mandatory   { color: var(--shall); }
+  .recommended { color: var(--should); }
+  .optional    { color: var(--may); }
+  .verify { color: var(--muted); font-size: .75rem; }
+  .req-text { margin: .4rem 0 .2rem; }
+  .cite, .aux { font-size: .8rem; color: var(--muted); margin-top: .3rem; }
+  .aux b { color: var(--fg); font-weight: 600; }
+  details.cat > summary { cursor: pointer; font-size: 1.1rem; font-weight: 650;
+        margin: 1.4rem 0 .3rem; list-style: none; display: flex; gap: .5rem;
+        align-items: baseline; border-bottom: 1px solid var(--line); padding-bottom: .3rem; }
+  details.cat > summary::before { content: "▸"; transition: transform .15s; }
+  details.cat[open] > summary::before { transform: rotate(90deg); }
+  .catcount { color: var(--muted); font-size: .8rem; font-weight: 400; }
+  .oq, .asm, .vc { border-left: 3px solid var(--open); padding: .4rem .9rem; margin: .7rem 0;
+                   background: var(--card); border-radius: 0 8px 8px 0; }
+  .oq.resolved { border-left-color: var(--resolved); }
+  .oq-id, .asm-id { font-weight: 700; font-family: ui-monospace, Menlo, monospace; }
+  .stds { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  .stds th, .stds td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid var(--line); }
+  .tablewrap { overflow-x: auto; }
+  #error { color: var(--shall); background: var(--card); border: 1px solid var(--shall);
+           border-radius: 8px; padding: 1rem; display: none; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">Requirements Viewer</h1>
+  <div class="meta" id="meta">loading…</div>
+  <div id="error"></div>
+
+  <div id="controls" class="hidden">
+    <input id="search" type="search" placeholder="Filter by text, ID, or standard…">
+    <button class="pbtn on" data-p="mandatory">SHALL</button>
+    <button class="pbtn on" data-p="recommended">SHOULD</button>
+    <button class="pbtn on" data-p="optional">MAY</button>
+    <span id="count"></span>
+  </div>
+
+  <div id="openq"></div>
+  <div id="assumptions"></div>
+  <div id="cats"></div>
+  <div id="valcases"></div>
+  <div id="standards"></div>
+</main>
+
+<script>
+"use strict";
+// All source-derived strings are inserted via textContent — never innerHTML. (REQ-12.6 spirit.)
+const $ = (s, r=document) => r.querySelector(s);
+const el = (tag, cls, text) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+};
+
+const state = { prio: new Set(["mandatory","recommended","optional"]), q: "" };
+
+fetch("../requirements/REQ-2026-001.json")
+  .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  .then(render)
+  .catch(err => {
+    const box = $("#error");
+    box.style.display = "block";
+    box.textContent = "Could not load ../requirements/REQ-2026-001.json (" + err.message +
+      "). Serve the repo over HTTP: run `python3 -m http.server` from the repo root, " +
+      "then open http://localhost:8000/tools/requirements-viewer.html";
+    $("#meta").textContent = "";
+  });
+
+function render(d) {
+  document.title = d.document_id + " — " + d.title;
+  $("#title").textContent = d.title;
+  const total = d.categories.reduce((n,c) => n + c.requirements.length, 0);
+  const mand = d.categories.reduce((n,c) => n + c.requirements.filter(r => r.priority==="mandatory").length, 0);
+  const meta = $("#meta");
+  meta.textContent = "";
+  meta.append(
+    el("span", null, d.document_id + " v" + d.version + " · " + d.date + " · "),
+    el("code", null, d.status),
+    el("span", null, " · " + total + " requirements (" + mand + " SHALL) · source of truth: "),
+    el("code", null, "requirements/REQ-2026-001.json")
+  );
+  $("#controls").classList.remove("hidden");
+
+  // Open questions first — reviewer decisions live here
+  const oq = $("#openq");
+  oq.append(el("h2", null, "Open Questions — review these first"));
+  for (const q of d.open_questions) {
+    const resolved = q.disposition.startsWith("RESOLVED");
+    const box = el("div", "oq" + (resolved ? " resolved" : ""));
+    box.append(
+      el("span", "oq-id", (resolved ? "✅ " : "🔲 ") + q.id + " — "),
+      el("span", null, q.question),
+      el("div", "aux")
+    );
+    box.lastChild.append(el("b", null, "Disposition: "), el("span", null, q.disposition));
+    oq.append(box);
+  }
+
+  // Assumptions
+  const as = $("#assumptions");
+  as.append(el("h2", null, "Assumptions"));
+  for (const a of d.assumptions) {
+    const box = el("div", "asm");
+    box.append(el("span", "asm-id", a.id + " — "), el("span", null, a.text));
+    const c = el("div", "aux");
+    c.append(el("b", null, "Consequence: "), el("span", null, a.consequence));
+    box.append(c);
+    if (a.evidence) {
+      const ev = el("div", "aux");
+      ev.append(el("b", null, "Evidence: "), el("span", null, a.evidence));
+      box.append(ev);
+    }
+    as.append(box);
+  }
+
+  // Categories
+  const cats = $("#cats");
+  for (const c of d.categories) {
+    const det = el("details", "cat");
+    det.open = true;
+    const sum = el("summary");
+    sum.append(el("span", null, c.name), el("span", "catcount",
+      c.requirements.length + " reqs · " + c.standard));
+    det.append(sum);
+    for (const r of c.requirements) {
+      const card = el("div", "req");
+      card.dataset.priority = r.priority;
+      card.dataset.search = (r.id + " " + r.text + " " + r.standard + " " +
+        (r.rationale||"") + " " + (r.notes||"")).toLowerCase();
+      const head = el("div", "req-head");
+      head.append(
+        el("span", "req-id " + r.priority, r.id),
+        el("span", "badge " + r.priority,
+          r.priority === "mandatory" ? "SHALL" : r.priority === "recommended" ? "SHOULD" : "MAY"),
+        el("span", "verify", "verify by " + r.verification)
+      );
+      card.append(head, el("div", "req-text", r.text),
+        el("div", "cite", "Cites: " + r.standard + ", " + r.section));
+      for (const [label, key] of [["Rationale","rationale"],["Notes","notes"]]) {
+        if (r[key]) {
+          const aux = el("div", "aux");
+          aux.append(el("b", null, label + ": "), el("span", null, r[key]));
+          card.append(aux);
+        }
+      }
+      det.append(card);
+    }
+    cats.append(det);
+  }
+
+  // Validation cases
+  const vc = $("#valcases");
+  vc.append(el("h2", null, "Validation Cases"));
+  for (const v of d.validation_cases) {
+    const box = el("div", "vc");
+    box.append(el("span", "asm-id", v.id + " — " + v.name));
+    box.append(el("div", null, v.description));
+    for (const [label, key] of [["Tests","tests"],["Expected","expected_behaviour"]]) {
+      const aux = el("div", "aux");
+      aux.append(el("b", null, label + ": "), el("span", null, v[key]));
+      box.append(aux);
+    }
+    vc.append(box);
+  }
+
+  // Standards table
+  const st = $("#standards");
+  st.append(el("h2", null, "Governing Standards"));
+  const wrap = el("div", "tablewrap");
+  const tbl = el("table", "stds");
+  const hr = el("tr");
+  for (const h of ["Standard","Title","Application"]) hr.append(el("th", null, h));
+  tbl.append(hr);
+  for (const s of d.governing_standards) {
+    const tr = el("tr");
+    tr.append(el("td", null, s.id), el("td", null, s.title), el("td", null, s.application));
+    tbl.append(tr);
+  }
+  wrap.append(tbl);
+  st.append(wrap);
+
+  // Filtering
+  const apply = () => {
+    let shown = 0;
+    for (const card of cats.querySelectorAll(".req")) {
+      const ok = state.prio.has(card.dataset.priority) &&
+        (!state.q || card.dataset.search.includes(state.q));
+      card.classList.toggle("hidden", !ok);
+      if (ok) shown++;
+    }
+    $("#count").textContent = shown + " / " + total + " shown";
+  };
+  $("#search").addEventListener("input", e => { state.q = e.target.value.toLowerCase(); apply(); });
+  for (const b of document.querySelectorAll(".pbtn")) {
+    b.addEventListener("click", () => {
+      const p = b.dataset.p;
+      if (state.prio.has(p)) { state.prio.delete(p); b.classList.remove("on"); }
+      else { state.prio.add(p); b.classList.add("on"); }
+      apply();
+    });
+  }
+  apply();
+}
+</script>
+</body>
+</html>

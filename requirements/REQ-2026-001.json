@@ -13,12 +13,13 @@
     "Per SE process principle 1 (review over authoring), this document is a DRAFT. It becomes the v1.0 baseline only after human review and an approving commit.",
     "Requirement IDs are stable per IEEE 29148. Do not renumber; deprecate instead.",
     "Priority values: mandatory (SHALL), recommended (SHOULD), optional (MAY).",
-    "Verification methods: inspection, test, analysis, demonstration."
+    "Verification methods: inspection, test, analysis, demonstration — per the taxonomy defined in NPR 7123.1 (and equivalently MIL-STD-961E)."
   ],
 
   "governing_standards": [
     { "id": "RFC 2119",            "title": "Key words for use in RFCs to Indicate Requirement Levels",        "application": "Requirement level keywords" },
     { "id": "IEEE 29148-2018",     "title": "Systems and software engineering — Requirements engineering",     "application": "Requirement structure, uniqueness, verifiability" },
+    { "id": "NPR 7123.1",          "title": "NASA Systems Engineering Processes and Requirements",              "application": "Verification method taxonomy (inspection, analysis, demonstration, test)" },
     { "id": "ISO/IEC 25010",       "title": "Systems and software Quality Requirements and Evaluation",        "application": "Non-functional quality attributes" },
     { "id": "ISO 8601-1:2019",     "title": "Date and time — Representations for information interchange",     "application": "All timestamps" },
     { "id": "ISO/IEC 14882:2020",  "title": "Programming languages — C++ (C++20)",                             "application": "Implementation language baseline" },
