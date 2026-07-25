@@ -23,6 +23,12 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   layer) added — 103 requirements total.
 
 ### Added
+- Bounded JSON parser `kst::json` (issue #6): strict RFC 8259, in-project per the
+  stdlib-first posture (REQ-9.4). Explicit documented limits on input size, depth,
+  string length, and member count (REQ-12.3); full UTF-8 and surrogate validation;
+  duplicate keys rejected; object members kept in document order — no unordered
+  containers (REQ-1.2). Adversarial test suite per REQ-12.9 plus the committed USGS
+  evidence fixture as a real-world case (REQ-10.4).
 - Build skeleton (issue #5): CMake project, `kst_core` static library separated from the
   thin `kst` CLI (REQ-9.2), stdlib-only test harness registered with CTest (REQ-10.2),
   warnings-as-errors set documented in the root CMakeLists (REQ-9.7). CLI verbs from

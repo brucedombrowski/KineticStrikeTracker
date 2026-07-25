@@ -5,3 +5,11 @@ add_executable(test_version test_version.cpp)
 target_link_libraries(test_version PRIVATE kst_core)
 target_include_directories(test_version PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME version COMMAND test_version)
+
+add_executable(test_json test_json.cpp)
+target_link_libraries(test_json PRIVATE kst_core)
+target_include_directories(test_json PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+# Real committed fixtures (REQ-10.4) are addressed from the source tree.
+target_compile_definitions(test_json PRIVATE
+    KST_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+add_test(NAME json COMMAND test_json)
