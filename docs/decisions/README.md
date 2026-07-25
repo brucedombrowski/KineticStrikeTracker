@@ -16,5 +16,6 @@ references to governing requirements or standards.
 | [DM-2026-002](DM-2026-002-license-selection.md) | Open source licence selection | Apache-2.0 |
 | [DM-2026-003](DM-2026-003-confidence-representation.md) | Confidence representation | Store factors, derive presentation (REQ-7.7) |
 | [DM-2026-004](DM-2026-004-triangulation-scope.md) | Independent triangulation in v1 | Deferred to backlog |
+| [DM-2026-005](DM-2026-005-external-standards-review.md) | External (Gemini) standards review dispositions | 6 accepted/modified, 2 rejected with rationale |
 
-All four decided by human review, issue #2 (2026-07-25).
+DM-2026-001 – 004 decided by human review, issue #2; DM-2026-005 adjudicates issue #20 (2026-07-25).

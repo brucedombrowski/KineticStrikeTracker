@@ -2,7 +2,7 @@
   "document_id": "REQ-2026-001",
   "title": "Kinetic Strike Tracker — Requirements Specification",
   "project": "KineticStrikeTracker",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "status": "draft-pending-human-review",
   "date": "2026-07-25",
   "author": "AI agent (Claude), drafted for human review",
@@ -32,8 +32,8 @@
       "application": "Verification method taxonomy (inspection, analysis, demonstration, test)"
     },
     {
-      "id": "ISO/IEC 25010",
-      "title": "Systems and software Quality Requirements and Evaluation",
+      "id": "ISO/IEC 25010:2023",
+      "title": "Systems and software quality requirements and evaluation — Product quality model",
       "application": "Non-functional quality attributes"
     },
     {
@@ -67,9 +67,9 @@
       "application": "Coordinate reference system"
     },
     {
-      "id": "RFC 4122",
-      "title": "A Universally Unique IDentifier (UUID) URN Namespace",
-      "application": "Internal event identifiers"
+      "id": "RFC 9562",
+      "title": "Universally Unique IDentifiers (UUIDs)",
+      "application": "Internal event identifiers — name-based UUIDv5 only (deterministic per REQ-1.2; time-ordered v6/v7 excluded)"
     },
     {
       "id": "SemVer 2.0.0",
@@ -82,12 +82,12 @@
       "application": "CHANGELOG.md structure"
     },
     {
-      "id": "NIST SP 800-53 AU-3",
+      "id": "NIST SP 800-53 Rev. 5 AU-3",
       "title": "Content of Audit Records",
       "application": "Provenance and audit logging"
     },
     {
-      "id": "NIST SP 800-53 CM-3",
+      "id": "NIST SP 800-53 Rev. 5 CM-3",
       "title": "Configuration Change Control",
       "application": "Git as audit trail"
     },
@@ -95,6 +95,11 @@
       "id": "SPDX 2.3",
       "title": "Software Package Data Exchange",
       "application": "License identification of ingested data"
+    },
+    {
+      "id": "RFC 8446",
+      "title": "The Transport Layer Security (TLS) Protocol Version 1.3",
+      "application": "Data-in-transit baseline: TLS 1.2 minimum, 1.3 preferred (REQ-10.5, REQ-12.8)"
     }
   ],
   "assumptions": [
@@ -196,7 +201,7 @@
         },
         {
           "id": "REQ-1.5",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Portability / Modularity",
           "text": "The system SHOULD be architected so that a future browser-accessible presentation layer can be added without modification to the analysis core.",
           "priority": "recommended",
@@ -211,7 +216,7 @@
       "requirements": [
         {
           "id": "REQ-2.1",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Modularity",
           "text": "The system SHALL define a source-adapter interface such that each data source is implemented as an independent, separately testable adapter, and SHALL support adding a new source without modification to the analysis core.",
           "priority": "mandatory",
@@ -280,7 +285,7 @@
         },
         {
           "id": "REQ-2.9",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Fault tolerance",
           "text": "The failure, timeout, or unavailability of any single source adapter SHALL NOT terminate the ingestion run. The system SHALL record the failure, continue with remaining sources, and mark the resulting analysis as having incomplete source coverage.",
           "priority": "mandatory",
@@ -297,7 +302,7 @@
         },
         {
           "id": "REQ-2.11",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Reusability",
           "text": "The system SHALL support an offline replay mode that performs a complete analysis run against previously persisted raw responses with no network access whatsoever.",
           "priority": "mandatory",
@@ -407,8 +412,8 @@
         },
         {
           "id": "REQ-3.5",
-          "standard": "RFC 4122",
-          "section": "4.3",
+          "standard": "RFC 9562",
+          "section": "5.5 (name-based UUIDv5)",
           "text": "Every Observation SHALL carry a stable internal identifier derived deterministically from its source identifier and native event identifier, such that re-ingesting the same record yields the same internal identifier.",
           "priority": "mandatory",
           "verification": "test",
@@ -424,7 +429,7 @@
         },
         {
           "id": "REQ-3.7",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Functional correctness",
           "text": "The system SHALL reject and log, rather than silently discard, any record failing schema or range validation.",
           "priority": "mandatory",
@@ -438,7 +443,7 @@
       "requirements": [
         {
           "id": "REQ-4.1",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Portability",
           "text": "The system SHALL persist all normalised observations, raw responses, correlations, assessments, and run metadata in a single local SQLite database file.",
           "priority": "mandatory",
@@ -455,7 +460,7 @@
         },
         {
           "id": "REQ-4.3",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Functional correctness",
           "text": "Ingestion SHALL be idempotent: re-ingesting an already-stored record SHALL update it in place rather than creating a duplicate, and SHALL leave the analytical result unchanged if the record is unchanged.",
           "priority": "mandatory",
@@ -471,7 +476,7 @@
         },
         {
           "id": "REQ-4.5",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Recoverability",
           "text": "The system SHALL NOT modify or delete previously persisted raw responses; the raw response store SHALL be append-only.",
           "priority": "mandatory",
@@ -529,7 +534,7 @@
         },
         {
           "id": "REQ-5.6",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Functional correctness",
           "text": "Every discrimination criterion SHALL be implemented as an explicit, published, human-auditable rule with stated numeric thresholds. The system SHALL NOT use opaque or statistically trained classification for source discrimination in v1.",
           "priority": "mandatory",
@@ -605,7 +610,7 @@
         },
         {
           "id": "REQ-6.3",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Functional correctness",
           "text": "The correlation algorithm SHALL be order-independent: the resulting set of candidate Events SHALL NOT depend on the order in which observations were ingested.",
           "priority": "mandatory",
@@ -689,7 +694,7 @@
         },
         {
           "id": "REQ-7.7",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Modularity",
           "text": "The system SHALL store the individual confidence factors, not only a combined result, and SHALL isolate the presentation of confidence (numeric score, ordinal band, or both) behind an interface such that changing the representation does not invalidate stored data or require re-analysis.",
           "priority": "mandatory",
@@ -737,7 +742,7 @@
         },
         {
           "id": "REQ-8.4",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Interoperability",
           "text": "All machine-readable output SHALL be emitted with stable key ordering and stable numeric formatting so that outputs of successive runs may be compared with a byte-level diff.",
           "priority": "mandatory",
@@ -794,7 +799,7 @@
         },
         {
           "id": "REQ-9.2",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Modularity",
           "text": "The system SHALL separate a presentation-independent core library from all user interface code, such that the core library contains no input or output logic beyond its defined interfaces.",
           "priority": "mandatory",
@@ -803,7 +808,7 @@
         },
         {
           "id": "REQ-9.3",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Modularity",
           "text": "The analysis core SHALL have no direct dependency on the network. All network access SHALL be confined to source adapters, and the core SHALL be exercisable entirely from stored data.",
           "priority": "mandatory",
@@ -820,7 +825,7 @@
         },
         {
           "id": "REQ-9.5",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Portability",
           "text": "Platform-specific code SHALL be isolated behind interfaces so that porting to another platform does not require modification of the analysis core.",
           "priority": "recommended",
@@ -837,7 +842,7 @@
         },
         {
           "id": "REQ-9.7",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Reliability",
           "text": "The system SHALL treat compiler warnings as errors under a documented warning set, and SHALL NOT suppress a warning without a recorded justification.",
           "priority": "recommended",
@@ -851,7 +856,7 @@
       "requirements": [
         {
           "id": "REQ-10.1",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Performance efficiency",
           "text": "The system SHALL complete a full analysis run over one year of catalog data for the region of interest, from stored data, in under 60 seconds on the target machine.",
           "priority": "recommended",
@@ -860,7 +865,7 @@
         },
         {
           "id": "REQ-10.2",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Testability",
           "text": "The system SHALL provide an automated test suite executable by a single command, covering at minimum: normalisation, correlation order-independence, discrimination thresholds, confidence computation, and end-to-end determinism.",
           "priority": "mandatory",
@@ -876,7 +881,7 @@
         },
         {
           "id": "REQ-10.4",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Testability",
           "text": "Test fixtures SHALL include captured real responses from each supported source, committed to the repository, so that the suite runs without network access.",
           "priority": "mandatory",
@@ -884,11 +889,12 @@
         },
         {
           "id": "REQ-10.5",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Security",
           "text": "All network retrieval SHALL use TLS with certificate verification enabled. Certificate verification SHALL NOT be disabled.",
           "priority": "mandatory",
-          "verification": "inspection"
+          "verification": "inspection",
+          "notes": "TLS 1.2 minimum, TLS 1.3 preferred, per RFC 8446. The client cannot mandate 1.3-only: upstream seismic services control their own endpoints."
         },
         {
           "id": "REQ-10.6",
@@ -909,7 +915,7 @@
         },
         {
           "id": "REQ-10.8",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Reliability",
           "text": "The system SHALL log its operations to a persistent log with UTC timestamps and severity levels sufficient to reconstruct a run after the fact.",
           "priority": "mandatory",
@@ -978,7 +984,7 @@
         },
         {
           "id": "REQ-12.2",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Security",
           "text": "All database access SHALL use parameterised statements. String concatenation SHALL NOT be used to construct any SQL statement incorporating source-derived data.",
           "priority": "mandatory",
@@ -986,7 +992,7 @@
         },
         {
           "id": "REQ-12.3",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Security",
           "text": "All parsers SHALL enforce documented bounds on input size, nesting depth, string length, array length, and numeric range, and SHALL fail safely on violation rather than exhausting memory or stack.",
           "priority": "mandatory",
@@ -995,7 +1001,7 @@
         },
         {
           "id": "REQ-12.4",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Security",
           "text": "The system SHALL NOT execute, evaluate, deserialise into executable form, or pass to a shell any content derived from a source.",
           "priority": "mandatory",
@@ -1011,7 +1017,7 @@
         },
         {
           "id": "REQ-12.6",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Security",
           "text": "Source-derived text SHALL be neutralised for the specific output context in which it is rendered, including escaping of spreadsheet formula-initiating characters in CSV output, escaping of markup in any HTML output, and control-character stripping in terminal and log output.",
           "priority": "mandatory",
@@ -1020,7 +1026,7 @@
         },
         {
           "id": "REQ-12.7",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Security",
           "text": "Source-derived free text SHALL be stored and processed strictly as data. Should any future component submit such text to a language model or other instruction-following system, that text SHALL be delimited and identified as untrusted content, and any instruction it contains SHALL NOT be acted upon.",
           "priority": "mandatory",
@@ -1029,7 +1035,7 @@
         },
         {
           "id": "REQ-12.8",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Security",
           "text": "The system SHALL validate TLS certificates on every retrieval, SHALL NOT follow redirects to non-TLS schemes, and SHALL bound response size, redirect count, and request timeout.",
           "priority": "mandatory",
@@ -1045,7 +1051,7 @@
         },
         {
           "id": "REQ-12.10",
-          "standard": "ISO/IEC 25010",
+          "standard": "ISO/IEC 25010:2023",
           "section": "Security",
           "text": "The system SHALL record the integrity digest of every ingested file alongside its provenance, so that a later change to a file used in a prior analysis is detectable.",
           "priority": "mandatory",
@@ -1099,6 +1105,15 @@
           "text": "Each requirement in this document SHALL be traceable forward to its implementing source location and its verifying test, recorded in a verification matrix under docs/verification.",
           "priority": "mandatory",
           "verification": "inspection"
+        },
+        {
+          "id": "REQ-13.6",
+          "standard": "SPDX 2.3",
+          "section": "Document creation",
+          "text": "Each release SHOULD include a software bill of materials enumerating the toolchain, OS-provided libraries linked, and any third-party components, in SPDX or CycloneDX format.",
+          "priority": "recommended",
+          "verification": "inspection",
+          "rationale": "External standards review (issue #20). Under the stdlib-first posture the SBOM is small — which is exactly why it is cheap to produce and worth having for supply-chain auditability."
         }
       ]
     }
