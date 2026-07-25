@@ -5,6 +5,7 @@
 // inputs (REQ-1.2), which is what makes REQ-10.3's run-twice test meaningful.
 #pragma once
 
+#include <map>
 #include <string>
 #include <vector>
 
@@ -71,6 +72,40 @@ struct Event {
     Confidence confidence;
 };
 
+// Diurnal-regularity discriminant (REQ-5.12, DM-2026-008). Industry blasts
+// on a shift schedule; war does not. Derived from the data rather than from
+// the manually maintained site registry of REQ-5.5.
+struct DiurnalRule {
+    double cell_degrees = 0.1;
+    int min_events = 30;
+    double concentration = 0.90;  // fraction inside the busiest 10-hour window
+    int window_hours = 10;
+    int min_empty_hours = 6;
+    // The window must sit in DAYLIGHT to be a working-hours signature.
+    // Local solar time is derived from longitude (hour = UTC + lon/15), which
+    // needs no timezone database and cannot go stale.
+    double daylight_start = 5.0;   // local solar
+    double daylight_end = 19.0;
+};
+
+// Per-cell verdict, retained so the reasoning can be reported (REQ-5.6).
+struct DiurnalCell {
+    long key = 0;
+    int count = 0;
+    int busiest_start_hour = 0;      // UTC
+    double window_centre_local = 0;  // local solar hour, for reporting
+    double concentration = 0.0;
+    int empty_hours = 0;
+    bool in_daylight = false;
+    bool industrial = false;
+};
+
+// Identify cells whose explosion-typed events follow a working-hours
+// signature. Deterministic: depends only on the observations and the rule.
+std::map<long, DiurnalCell> diurnal_cells(
+    const std::vector<model::Observation>& observations,
+    const DiurnalRule& rule = {});
+
 // Apply the discrimination rules to a single observation (REQ-5.1-5.7).
 Discrimination discriminate(const model::Observation& o);
 
@@ -79,6 +114,7 @@ Discrimination discriminate(const model::Observation& o);
 // physical event from different catalogs count once as instrumental
 // corroboration, not twice (REQ-6.5).
 std::vector<Event> correlate(std::vector<model::Observation> observations,
-                             const Windows& w = {});
+                             const Windows& w = {},
+                             const DiurnalRule& diurnal = {});
 
 }  // namespace kst::analysis

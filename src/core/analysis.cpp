@@ -4,6 +4,7 @@
 #include <cmath>
 #include <functional>
 #include <cstdio>
+#include <array>
 #include <map>
 #include <set>
 
@@ -127,6 +128,71 @@ Discrimination discriminate(const model::Observation& o) {
     return d;
 }
 
+long cell_key(double lat, double lon, double size) {
+    const long la = static_cast<long>(std::floor(lat / size));
+    const long lo = static_cast<long>(std::floor(lon / size));
+    return la * 100000L + lo;  // distinct for any plausible grid size
+}
+
+std::map<long, DiurnalCell> diurnal_cells(
+    const std::vector<model::Observation>& obs, const DiurnalRule& rule) {
+    // Hour histogram per cell, explosion-typed observations only. UTC is used
+    // deliberately: converting to local time would require assuming a zone,
+    // and the signature survives the smear for any single cell (DM-2026-008).
+    std::map<long, std::array<int, 24>> hist;
+    std::map<long, double> cell_lon;
+    for (const model::Observation& o : obs) {
+        if (o.reported_event_type != "explosion" &&
+            o.reported_event_type != "chemical explosion") {
+            continue;
+        }
+        if (!o.latitude || !o.longitude) continue;
+        const auto ms = model::parse_iso8601_ms(o.origin_time);
+        if (!ms) continue;
+        long h = static_cast<long>((*ms / 3600000) % 24);
+        if (h < 0) h += 24;
+        const long k = cell_key(*o.latitude, *o.longitude, rule.cell_degrees);
+        hist[k][static_cast<std::size_t>(h)]++;
+        cell_lon[k] = *o.longitude;
+    }
+
+    std::map<long, DiurnalCell> out;
+    for (const auto& [key, hours] : hist) {
+        DiurnalCell c;
+        c.key = key;
+        for (int n : hours) c.count += n;
+        if (c.count < rule.min_events) continue;
+
+        // Busiest contiguous window, wrapping midnight.
+        int best = 0, best_start = 0;
+        for (int start = 0; start < 24; ++start) {
+            int sum = 0;
+            for (int k = 0; k < rule.window_hours; ++k) {
+                sum += hours[static_cast<std::size_t>((start + k) % 24)];
+            }
+            if (sum > best) { best = sum; best_start = start; }
+        }
+        c.busiest_start_hour = best_start;
+        c.concentration = static_cast<double>(best) / c.count;
+        for (int n : hours) if (n == 0) ++c.empty_hours;
+
+        // Convert the window centre to local solar time. A tight window at
+        // local midnight is the signature of sustained night operations, NOT
+        // of industry — without this check the rule reclassifies conflict as
+        // blasting, which is the worst error it could make.
+        const double centre_utc = best_start + rule.window_hours / 2.0;
+        double local = std::fmod(centre_utc + cell_lon[key] / 15.0, 24.0);
+        if (local < 0) local += 24.0;
+        c.window_centre_local = local;
+        c.in_daylight = local >= rule.daylight_start && local <= rule.daylight_end;
+
+        c.industrial = c.concentration >= rule.concentration &&
+                       c.empty_hours >= rule.min_empty_hours && c.in_daylight;
+        out.emplace(key, c);
+    }
+    return out;
+}
+
 namespace {
 
 // Cross-catalog identity: the same physical event published by two agencies
@@ -167,7 +233,8 @@ std::string event_uid_for(const std::vector<model::Observation>& group) {
 }  // namespace
 
 std::vector<Event> correlate(std::vector<model::Observation> obs,
-                             const Windows& w) {
+                             const Windows& w, const DiurnalRule& diurnal) {
+    const std::map<long, DiurnalCell> cells = diurnal_cells(obs, diurnal);
     // Canonical ordering first: correlation must not depend on the order in
     // which sources happened to be ingested (REQ-6.3).
     std::sort(obs.begin(), obs.end(),
@@ -247,6 +314,31 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
             }
             for (const auto& r : d.reasons) {
                 e.discrimination.reasons.push_back(o.source_id + ": " + r);
+            }
+        }
+
+        // REQ-5.12: the diurnal rule may only move a verdict toward the more
+        // conservative classification, never toward surface-explosion.
+        if (e.discrimination.classification == Classification::SurfaceExplosion) {
+            for (const auto& o : e.constituents) {
+                if (!o.latitude || !o.longitude) continue;
+                const auto it = cells.find(
+                    cell_key(*o.latitude, *o.longitude, diurnal.cell_degrees));
+                if (it == cells.end() || !it->second.industrial) continue;
+                const DiurnalCell& c = it->second;
+                char buf[320];
+                std::snprintf(
+                    buf, sizeof(buf),
+                    "diurnal rule: %d explosion-typed events in this 0.1 deg cell, "
+                    "%.0f%% inside a 10-hour window centred %04.1f local solar "
+                    "(daylight) with %d hours empty - a working-hours signature "
+                    "consistent with industrial blasting rather than conflict "
+                    "(REQ-5.12)",
+                    c.count, c.concentration * 100, c.window_centre_local,
+                    c.empty_hours);
+                e.discrimination.classification = Classification::IndustrialBlast;
+                e.discrimination.reasons.emplace_back(buf);
+                break;
             }
         }
 

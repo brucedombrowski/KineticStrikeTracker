@@ -2,7 +2,7 @@
   "document_id": "REQ-2026-001",
   "title": "Kinetic Strike Tracker — Requirements Specification",
   "project": "KineticStrikeTracker",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "status": "draft-pending-human-review",
   "date": "2026-07-25",
   "author": "AI agent (Claude), drafted for human review",
@@ -604,6 +604,16 @@
           "priority": "mandatory",
           "verification": "test",
           "rationale": "Divergence between an independent solution and a published one is itself an analytical signal and must remain visible."
+        },
+        {
+          "id": "REQ-5.12",
+          "standard": "IEEE 29148-2018",
+          "section": "9.6.5",
+          "text": "The system SHALL apply a diurnal-regularity discriminant: where a spatial cell accumulates a documented minimum number of explosion-typed observations and those observations concentrate within a working-hours window while leaving a documented number of hours empty, the system SHALL reclassify them as industrial blasting and record the observed distribution as the reason. This discriminant SHALL be capable of reclassifying an event to industrial blasting but SHALL NOT be capable of promoting any event to surface explosion.",
+          "priority": "mandatory",
+          "verification": "test",
+          "rationale": "Measured (issue #25): a southern Jordan phosphate-mining cell produced 1152 explosion-typed events confined to 06:00-13:00 UTC with 14 empty hours, while Gaza produced 1425 spread across all 24 hours and peaking at night. Industry keeps working hours; war does not. This derives the industrial signature from the data rather than depending on the manually maintained registry of REQ-5.5, and it works where the depth discriminant cannot because these events carry unconstrained depths (issue #23). The one-way constraint is deliberate: a facility struck repeatedly at similar hours could mimic the pattern, so the rule may only ever move an event toward the more conservative classification.",
+          "notes": "Thresholds are configuration, reported in output, and stated in DM-2026-008."
         }
       ]
     },
@@ -1187,6 +1197,11 @@
       "id": "OQ-08",
       "question": "Raw-response retention policy. REQ-4.5 makes the raw store append-only and REQ-2.10 requires persisting every response, so with whole-Earth scope (REQ-1.1) and repeated ingestion the database grows without bound — a single year of daily multi-source polling is plausibly tens of GB. Three options: (a) truly unbounded, simplest and most faithful to REQ-4.5, disk grows forever; (b) age-based export of old raw bodies to external files, keeping digests and metadata in the database so provenance chains still resolve (REQ-7.4) while the working DB stays lean; (c) content-addressed dedup, storing each distinct body once keyed by SHA-256 — successive polls of an unchanged window return byte-identical bodies, so this is likely a large win with zero information loss, and it composes with either (a) or (b).",
       "resolution": "RESOLVED 2026-07-25 (issue #22): option (c) content-addressed dedup adopted unconditionally per DM-2026-006. Raw bodies stored once keyed by SHA-256; retrieval metadata still recorded per request. Archival (option b) deferred until real ingestion volume is measured."
+    },
+    {
+      "id": "OQ-10",
+      "question": "Whether to adopt a diurnal-pattern discriminant that identifies industrial blasting from its working-hours signature rather than from a registry of known sites.",
+      "resolution": "RESOLVED 2026-07-25 (issue #25): adopted per recommendation. Supporting discriminant only — it may reclassify to industrial-blast but never promote to surface-explosion. Grid 0.1 degrees, minimum 30 events per cell, triggers when >=90% of a cell's events fall within a 10-hour window AND at least 6 hours are empty. Recorded in DM-2026-008; implemented as REQ-5.12."
     }
   ],
   "deferred_to_future_release": [
@@ -1226,6 +1241,14 @@
       "description": "Thirteen IDC (CTBTO) origins over central/western Iran, 2025-06-13 to 2025-06-22, clustered on strike nights. QuakeML shows all carry depthType 'operator assigned', typeCertainty 'suspected', no magnitude, and horizontal uncertainty ellipses of 146x312 km to 265x1011 km. Same window contains NEIC's Semnan origin (10x14 km, 'known') and an ISN origin (6x10 km, freely determined 22.3 km depth).",
       "tests": "REQ-2.19 (provenance-carrying formats), REQ-5.2 (depthType governs the depth discriminant), REQ-7.8 (uncertainty drives location confidence), REQ-8.7 (observed vs derived).",
       "expected_behaviour": "The system reports location confidence 'unusable' for the IDC origins, declines the depth discriminant because depthType says the depth was assigned rather than solved, and surfaces the source's own 'suspected' hedge. It does NOT attribute any of them to a named facility."
+    },
+    {
+      "id": "VC-05",
+      "name": "Minab school strike, 2026-02-28 — documented incident, zero instrumental detection",
+      "description": "A girls' primary school in Minab, Hormozgan province, Iran, reported struck on 2026-02-28 with ~165-175 killed, condemned by UN human rights experts and UNESCO. Encoded as a curated observation (REQ-2.18) and compared against the instrumental record: 54 observations across five months over the whole Hormuz region, EVERY one typed 'earthquake', none typed 'explosion'. On the date itself the region produced one catalogued event, ~215 km distant, typed earthquake, with +/-82 km uncertainty.",
+      "tests": "REQ-8.6 (absence of detection is not absence of event), REQ-2.18 (curated seed), REQ-6.1/6.2 (association windows), REQ-7.5 (occurrence vs characterisation), REQ-11.4/11.5 (no verified claims, no derived casualties), REQ-1.6 (coverage model).",
+      "expected_behaviour": "The curated event is reported standing alone — 'independent sources: 1 (instrumental 0)' — and is NOT associated with the distant IDC event. The report states that no instrumental corroboration was available and does not imply the incident did not occur. This is the reference case for the honest-reporting requirement.",
+      "evidence": "requirements/evidence/hormuz-2026-feb-jul.csv; docs/case-studies/minab-2026-02-28.md"
     }
   ]
 }
