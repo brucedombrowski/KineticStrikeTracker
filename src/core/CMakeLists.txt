@@ -3,6 +3,7 @@
 configure_file(kst/version.hpp.in generated/kst/version.hpp @ONLY)
 
 add_library(kst_core STATIC
+    db.cpp
     http.cpp
     json.cpp
     version.cpp
@@ -17,3 +18,6 @@ target_include_directories(kst_core PUBLIC
 # macOS, so neither is a third-party runtime dependency.
 find_package(CURL REQUIRED)
 target_link_libraries(kst_core PUBLIC CURL::libcurl)
+
+find_package(SQLite3 REQUIRED)
+target_link_libraries(kst_core PUBLIC SQLite::SQLite3)

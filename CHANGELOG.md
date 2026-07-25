@@ -31,6 +31,13 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   layer) added — 103 requirements total.
 
 ### Added
+- SQLite persistence layer `kst::db` (issue #8): versioned schema with ordered forward
+  migrations, refusing databases newer than the build (REQ-4.2); `raw_response`
+  append-only enforced by SQL triggers rather than convention (REQ-4.5); idempotent
+  observation upsert on the natural key (REQ-4.3); prepared statements with bound
+  parameters throughout, no interface to splice values into SQL (REQ-12.2). Schema
+  carries run metadata (REQ-4.4), revision history (REQ-2.17), fixed-depth flag (REQ-5.2),
+  source class (REQ-7.2), curated-seed flag (REQ-2.18) and file digests (REQ-12.10).
 - HTTPS retrieval layer `kst::http` (issue #7) over OS-provided libcurl 8.7.1 and
   CommonCrypto — no third-party dependency (REQ-9.4). TLS verification always on with no
   interface to disable it, TLS 1.2 floor per RFC 8446 (REQ-10.5); https-only with

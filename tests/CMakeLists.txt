@@ -20,3 +20,8 @@ target_include_directories(test_http PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_http PRIVATE
     KST_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 add_test(NAME http COMMAND test_http)
+
+add_executable(test_db test_db.cpp)
+target_link_libraries(test_db PRIVATE kst_core)
+target_include_directories(test_db PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME db COMMAND test_db)
