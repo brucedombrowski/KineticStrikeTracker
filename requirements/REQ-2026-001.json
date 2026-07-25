@@ -2,7 +2,7 @@
   "document_id": "REQ-2026-001",
   "title": "Kinetic Strike Tracker — Requirements Specification",
   "project": "KineticStrikeTracker",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "status": "draft-pending-human-review",
   "date": "2026-07-25",
   "author": "AI agent (Claude), drafted for human review",
@@ -482,6 +482,15 @@
           "text": "The system SHALL NOT modify or delete previously persisted raw responses; the raw response store SHALL be append-only.",
           "priority": "mandatory",
           "verification": "inspection"
+        },
+        {
+          "id": "REQ-4.6",
+          "standard": "NIST SP 800-53 Rev. 5 AU-3",
+          "section": "Content of Audit Records",
+          "text": "The raw response store SHALL be content-addressed: each distinct response body is stored once, keyed by its SHA-256 digest, while every retrieval SHALL still record its own request URL, timestamp, and status referencing that body. Deduplication SHALL NOT discard retrieval history.",
+          "priority": "mandatory",
+          "verification": "test",
+          "rationale": "Resolves OQ-08 (issue #22, DM-2026-006). Successive polls of an unchanged window return byte-identical bodies, so dedup is a large storage win at zero information loss. The distinction matters: the body is deduplicated, the act of retrieval is not — provenance (REQ-7.4) depends on knowing when each fetch happened, not merely what was fetched."
         }
       ]
     },
@@ -1119,13 +1128,7 @@
       ]
     }
   ],
-  "open_questions": [
-    {
-      "id": "OQ-08",
-      "question": "Raw-response retention policy. REQ-4.5 makes the raw store append-only and REQ-2.10 requires persisting every response, so with whole-Earth scope (REQ-1.1) and repeated ingestion the database grows without bound — a single year of daily multi-source polling is plausibly tens of GB. Three options: (a) truly unbounded, simplest and most faithful to REQ-4.5, disk grows forever; (b) age-based export of old raw bodies to external files, keeping digests and metadata in the database so provenance chains still resolve (REQ-7.4) while the working DB stays lean; (c) content-addressed dedup, storing each distinct body once keyed by SHA-256 — successive polls of an unchanged window return byte-identical bodies, so this is likely a large win with zero information loss, and it composes with either (a) or (b).",
-      "disposition": "Open. Recommend adopting (c) unconditionally as a storage detail invisible to callers, then deciding between (a) and (b) once real ingestion volume is measured. Raised by implementation of issue #8; no requirement currently addresses retention."
-    }
-  ],
+  "open_questions": [],
   "resolved_questions": [
     {
       "id": "OQ-01",
@@ -1161,6 +1164,11 @@
       "id": "OQ-05",
       "question": "Whether the confidence assessment is emitted as a numeric score or as ordinal bands. Ordinal bands resist false precision; numeric scores sort and threshold more naturally.",
       "resolution": "(review issue #2): design for representation change — store factors, derive presentation (REQ-7.7). Numeric-vs-ordinal choice deferred without risk."
+    },
+    {
+      "id": "OQ-08",
+      "question": "Raw-response retention policy. REQ-4.5 makes the raw store append-only and REQ-2.10 requires persisting every response, so with whole-Earth scope (REQ-1.1) and repeated ingestion the database grows without bound — a single year of daily multi-source polling is plausibly tens of GB. Three options: (a) truly unbounded, simplest and most faithful to REQ-4.5, disk grows forever; (b) age-based export of old raw bodies to external files, keeping digests and metadata in the database so provenance chains still resolve (REQ-7.4) while the working DB stays lean; (c) content-addressed dedup, storing each distinct body once keyed by SHA-256 — successive polls of an unchanged window return byte-identical bodies, so this is likely a large win with zero information loss, and it composes with either (a) or (b).",
+      "resolution": "RESOLVED 2026-07-25 (issue #22): option (c) content-addressed dedup adopted unconditionally per DM-2026-006. Raw bodies stored once keyed by SHA-256; retrieval metadata still recorded per request. Archival (option b) deferred until real ingestion volume is measured."
     }
   ],
   "deferred_to_future_release": [

@@ -1,0 +1,267 @@
+{
+  "type": "FeatureCollection",
+  "generator": "KineticStrikeTracker 0.2.0",
+  "coverage": [
+    {"source": "isc", "note": "Aggregates member agencies including the CTBTO IDC, which does detect surface events at munition scale. Reviewed bulletin lags roughly 24 months; contributed preliminary data arrives sooner."},
+    {"source": "usgs", "note": "Global catalog. Magnitude of completeness over the Middle East is approximately M4.0 — well above the M2.0-M2.5 at which munition-scale events couple. Cannot see strikes."}
+  ],
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [49.6766, 33.6454]},
+      "properties": {
+        "event_uid": "1d5bdc47-7ee0-58d6-97a8-dddec6c923fd",
+        "origin_time": "2025-06-13T17:42:09.240Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515656", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [49.8837, 34.6113]},
+      "properties": {
+        "event_uid": "486a0925-ecdb-5d04-a002-9cb9ea59ccbe",
+        "origin_time": "2025-06-13T18:14:24.010Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515658", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [50.8960, 33.9472]},
+      "properties": {
+        "event_uid": "ff5f505d-5152-5724-9b1d-6d55713c1526",
+        "origin_time": "2025-06-13T18:20:20.090Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515659", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [53.2521, 32.0668]},
+      "properties": {
+        "event_uid": "44422e2e-2d81-5b4b-8b19-e308942d0577",
+        "origin_time": "2025-06-14T01:40:58.440Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515674", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [52.2689, 32.6786]},
+      "properties": {
+        "event_uid": "cef888e5-0938-54e3-8bf7-0ec4172c792a",
+        "origin_time": "2025-06-14T01:57:19.610Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515676", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [51.3298, 33.1568]},
+      "properties": {
+        "event_uid": "252e5dfe-3701-525f-b625-cee5fae29ead",
+        "origin_time": "2025-06-14T19:46:26.000Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515715", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [51.2421, 32.5753]},
+      "properties": {
+        "event_uid": "1f41d3ca-17ab-5c40-947a-edae607ca8e2",
+        "origin_time": "2025-06-14T20:08:39.250Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515718", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [49.6753, 31.7682]},
+      "properties": {
+        "event_uid": "6f08acbc-3657-5b94-b7ab-5d6c2fb6d533",
+        "origin_time": "2025-06-14T23:17:46.840Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515726", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [49.6003, 33.5838]},
+      "properties": {
+        "event_uid": "e0bc8ed6-33e8-5ff4-8cb8-62270f73cfac",
+        "origin_time": "2025-06-14T23:40:49.160Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515728", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [50.5881, 33.9341]},
+      "properties": {
+        "event_uid": "981bb753-fb35-5223-8fe2-ce23cb737ffd",
+        "origin_time": "2025-06-14T23:51:44.160Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515729", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [49.0258, 34.3783]},
+      "properties": {
+        "event_uid": "704ac9be-2e1c-56cf-9454-a0c9c97b94db",
+        "origin_time": "2025-06-16T00:57:03.980Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515771", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [52.0554, 34.9997]},
+      "properties": {
+        "event_uid": "49d9628e-7c5f-5733-8f38-e134a4dca393",
+        "origin_time": "2025-06-17T21:57:28.430Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644515878", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [53.0254, 35.3963]},
+      "properties": {
+        "event_uid": "515fef3a-87da-5ff7-81a5-074289f0e961",
+        "origin_time": "2025-06-20T17:49:14.620Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "high", "location": "moderate", "characterisation": "moderate"},
+        "independent_sources": 2,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "643546319", "magnitude": 5.0, "magnitude_type": "MW", "depth_km": 10.0, "depth_is_fixed": true, "author": ""},
+          {"source": "usgs", "class": "A", "native_id": "us6000qlhj", "magnitude": 4.9, "magnitude_type": "mww", "depth_km": 10.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 10 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)",
+          "usgs: depth 10 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [50.6806, 32.4463]},
+      "properties": {
+        "event_uid": "4cb591ea-56ea-5365-ad0c-d6111230bdce",
+        "origin_time": "2025-06-22T04:22:25.970Z",
+        "classification": "indeterminate",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "644516070", "depth_km": 0.0, "depth_is_fixed": true, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: depth 0 km is an agency default, not a constrained measurement; depth discriminant not applied (REQ-5.2)"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {"type": "Point", "coordinates": [49.5740, 35.2070]},
+      "properties": {
+        "event_uid": "cb34a6d1-ec33-5065-8614-87b089344e99",
+        "origin_time": "2025-06-25T01:34:30.800Z",
+        "classification": "natural-earthquake",
+        "confidence": {"occurrence": "moderate", "location": "moderate", "characterisation": "low"},
+        "independent_sources": 1,
+        "constituents": [
+          {"source": "isc", "class": "A", "native_id": "643919539", "magnitude": 3.1, "magnitude_type": "ML", "depth_km": 22.3, "depth_is_fixed": false, "author": ""}
+        ],
+        "discrimination_reasons": [
+          "isc: constrained depth well below the surface is inconsistent with a surface source"
+        ]
+      }
+    }
+  ]
+}

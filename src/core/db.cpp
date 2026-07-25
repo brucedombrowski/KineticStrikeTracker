@@ -16,6 +16,16 @@ constexpr std::array<const char*, 1> kMigrations = {
     R"SQL(
     -- Raw source responses, exactly as received (REQ-2.10). Append-only
     -- (REQ-4.5), enforced below by triggers rather than by convention.
+    -- Content-addressed bodies: each distinct body stored once (REQ-4.6).
+    CREATE TABLE raw_body (
+        sha256      TEXT PRIMARY KEY,
+        body        BLOB NOT NULL,
+        byte_count  INTEGER NOT NULL,
+        first_seen  TEXT NOT NULL
+    );
+
+    -- One row per retrieval. Bodies dedupe; retrievals never do — knowing
+    -- when a source was last confirmed unchanged is provenance (REQ-4.6).
     CREATE TABLE raw_response (
         id            INTEGER PRIMARY KEY,
         source_id     TEXT    NOT NULL,
@@ -23,12 +33,20 @@ constexpr std::array<const char*, 1> kMigrations = {
         requested_at  TEXT    NOT NULL,   -- ISO 8601 UTC (REQ-3.2)
         http_status   INTEGER,
         content_type  TEXT,
-        body          BLOB    NOT NULL,
-        sha256        TEXT    NOT NULL,
-        byte_count    INTEGER NOT NULL
+        sha256        TEXT    NOT NULL REFERENCES raw_body(sha256),
+        run_id        INTEGER
     );
     CREATE INDEX idx_raw_response_source ON raw_response(source_id, requested_at);
     CREATE INDEX idx_raw_response_sha    ON raw_response(sha256);
+
+    CREATE TRIGGER raw_body_no_update
+    BEFORE UPDATE ON raw_body BEGIN
+        SELECT RAISE(ABORT, 'raw_body is append-only (REQ-4.5)');
+    END;
+    CREATE TRIGGER raw_body_no_delete
+    BEFORE DELETE ON raw_body BEGIN
+        SELECT RAISE(ABORT, 'raw_body is append-only (REQ-4.5)');
+    END;
 
     CREATE TRIGGER raw_response_no_update
     BEFORE UPDATE ON raw_response BEGIN

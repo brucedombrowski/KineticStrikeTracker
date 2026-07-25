@@ -63,6 +63,20 @@ as the planning meeting record (REQ-13.2):
    of the process framework.
 5. Report to Bruce what was redacted, if anything.
 
+## Open questions — one per GitHub issue
+
+Every open question in the requirements document gets its **own** GitHub issue, labelled
+`question` + `human-prompt`. Never bundle multiple questions into one issue.
+
+The loop:
+1. Question arises during work → add to `open_questions` in REQ-2026-001.json → file it as
+   its own issue with options and a recommendation → **tell Bruce explicitly to answer it**.
+2. Bruce answers on the issue (or via the viewer's markup → file review).
+3. Apply: amend/add requirements, record a DM if it is a design decision, move the question
+   to `resolved_questions` with its resolution, close the issue.
+
+`open_questions` holds only unresolved items; the count is meant to return to zero.
+
 ## Known open questions
 
 Tracked in the `open_questions` block of the requirements document. As of the initial draft: build

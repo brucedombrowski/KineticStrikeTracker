@@ -73,20 +73,27 @@ KST_TEST(raw_response_is_append_only) {
     auto db = Database::open(t.path, &err);
     KST_CHECK(static_cast<bool>(db));
     if (!db) return;
+    auto body = db->prepare(
+        "INSERT INTO raw_body(sha256,body,byte_count,first_seen) VALUES(?,?,?,?)");
+    KST_CHECK(static_cast<bool>(body));
+    if (!body) return;
+    body->bind(1, "deadbeef").bind(2, "{}").bind(3, std::int64_t{2})
+        .bind(4, "2026-07-25T00:00:00.000Z");
+    KST_CHECK(body->execute());
+
     auto ins = db->prepare(
         "INSERT INTO raw_response(source_id,request_url,requested_at,"
-        "http_status,content_type,body,sha256,byte_count) "
-        "VALUES(?,?,?,?,?,?,?,?)");
+        "http_status,content_type,sha256) VALUES(?,?,?,?,?,?)");
     KST_CHECK(static_cast<bool>(ins));
     if (!ins) return;
     ins->bind(1, "usgs").bind(2, "https://example.test/q")
         .bind(3, "2026-07-25T00:00:00.000Z").bind(4, std::int64_t{200})
-        .bind(5, "application/json").bind(6, "{}").bind(7, "deadbeef")
-        .bind(8, std::int64_t{2});
+        .bind(5, "application/json").bind(6, "deadbeef");
     KST_CHECK(ins->execute());
 
     // Triggers must reject both, regardless of caller intent (REQ-4.5).
-    KST_CHECK(!db->execute("UPDATE raw_response SET body = 'x' WHERE id = 1"));
+    KST_CHECK(!db->execute("UPDATE raw_body SET body = 'x' WHERE sha256='deadbeef'"));
+    KST_CHECK(!db->execute("UPDATE raw_response SET source_id = 'x' WHERE id = 1"));
     KST_CHECK(!db->execute("DELETE FROM raw_response WHERE id = 1"));
 
     auto count = db->prepare("SELECT COUNT(*) FROM raw_response");

@@ -4,6 +4,10 @@ configure_file(kst/version.hpp.in generated/kst/version.hpp @ONLY)
 
 add_library(kst_core STATIC
     db.cpp
+    analysis.cpp
+    pipeline.cpp
+    observation.cpp
+    source.cpp
     http.cpp
     json.cpp
     version.cpp

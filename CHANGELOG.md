@@ -31,6 +31,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   layer) added — 103 requirements total.
 
 ### Added
+- **Working prototype** (issues #9-#12): end-to-end `ingest -> analyse -> report`.
+  Observation model with RFC 9562 UUIDv5 deterministic identity and self-contained
+  ISO 8601/civil-date handling (REQ-3.x); pluggable adapters for ISC (CTBTO IDC route),
+  USGS GeoJSON, and local files/curated seed data (REQ-2.1/2.2/2.4/2.13/2.18);
+  order-independent union-find correlation with cross-catalog dedup (REQ-6.3/6.5);
+  auditable discrimination rules that decline to fire on agency-default depths
+  (REQ-5.2/5.6); confidence stored as factors with derived ordinal bands on three
+  separate axes (REQ-7.5/7.7); GeoJSON + text report with mandatory detection-limitation
+  statement and coverage notes (REQ-8.2/8.3/8.6).
+  Verified live: 16 observations from ISC+USGS over the June 2025 Iran window,
+  15 candidate events, byte-identical across repeated runs (REQ-1.2).
+- Content-addressed raw-body storage per DM-2026-006 (REQ-4.6).
 - SQLite persistence layer `kst::db` (issue #8): versioned schema with ordered forward
   migrations, refusing databases newer than the build (REQ-4.2); `raw_response`
   append-only enforced by SQL triggers rather than convention (REQ-4.5); idempotent
