@@ -56,17 +56,30 @@ Discrimination discriminate(const model::Observation& o) {
     Discrimination d;
 
     // The source's own event type is evidence, taken as published (REQ-3.6).
+    // Values follow the QuakeML 1.2 EventType enumeration.
     const std::string& t = o.reported_event_type;
+
+    // Deliberate, routine, non-hostile explosions. Distinguishing these is
+    // the whole point of REQ-5.5: a mining region produces a steady stream
+    // of them, and a system that cannot tell them from munitions is a
+    // false-positive generator wherever industry operates.
     if (t == "quarry blast" || t == "quarry" || t == "mining explosion" ||
-        t == "mine collapse") {
+        t == "mine collapse" || t == "experimental explosion" ||
+        t == "controlled explosion" || t == "induced or triggered event" ||
+        t == "rock burst" || t == "collapse" || t == "cavity collapse") {
         d.classification = Classification::IndustrialBlast;
-        d.reasons.push_back("source reports event type '" + t + "'");
+        d.reasons.push_back("source reports event type '" + t +
+                            "', a deliberate or induced non-hostile source");
         return d;
     }
+    // Explosions the source does not attribute to industry. 'explosion' is
+    // the generic QuakeML value and says nothing about cause — it is not
+    // evidence of a strike on its own (REQ-11.4).
     if (t == "explosion" || t == "chemical explosion" ||
-        t == "nuclear explosion") {
+        t == "accidental explosion" || t == "nuclear explosion") {
         d.classification = Classification::SurfaceExplosion;
-        d.reasons.push_back("source reports event type '" + t + "'");
+        d.reasons.push_back("source reports event type '" + t +
+                            "'; the source does not attribute a cause");
         return d;
     }
 

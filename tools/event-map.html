@@ -188,6 +188,10 @@ function ageOpacity(e){
   return age<=0?1:Math.max(0.12,1-age*0.88);
 }
 function kmToDegLat(km){return km/111.32}
+function degPerPx(){
+  const r=svg.getBoundingClientRect();
+  return view.w/Math.max(1,r.width);
+}
 // Rendering is split in two because the two costs have different
 // frequencies: geometry changes only when the view or filters change,
 // while opacity changes every animation frame. Rebuilding 17k nodes per
@@ -197,7 +201,6 @@ function rebuild(){
   if(layer) layer.remove();
   layer=el("g"); scene.append(layer);
   const showUnc=$("#showUnc").checked, hide=$("#hideUnusable").checked;
-  const scale=Math.sqrt(view.w/360);
   visible=[];
   for(const e of events){
     e.node=null; e.op=-1;
@@ -210,10 +213,13 @@ function rebuild(){
       c.setAttribute("rx",kmToDegLat(e.unc)/Math.max(.15,Math.cos(e.lat*Math.PI/180)));
       c.setAttribute("class","unc"); g.append(c);
     }
-    const r=(e.mag!=null? 0.8+e.mag*0.35 : 1.1)*scale;
+    // Constant on-screen size: degrees-per-pixel * desired pixel radius.
+    // A dot that stays geographically large while zooming would imply a
+    // footprint the data never claimed; precision lives in the ellipse.
+    const px = e.mag!=null ? 2.2 + e.mag*0.9 : 2.6;
     const c=el("circle");
     c.setAttribute("cx",e.lon); c.setAttribute("cy",-e.lat);
-    c.setAttribute("r",Math.max(0.15,r*0.5));
+    c.setAttribute("r",(px*degPerPx()).toFixed(5));
     c.setAttribute("class","pt");
     c.addEventListener("click",ev=>{ev.stopPropagation();show(e)});
     g.append(c);
