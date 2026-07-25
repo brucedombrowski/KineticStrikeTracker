@@ -137,7 +137,8 @@ function drawBase(){
     p.setAttribute("class","border"); scene.append(p);
   }
 }
-let events=[], layer=null;
+let events=[], layer=null, visible=[];
+let prevNow=-1, prevFade=0, prevStatic=false;
 // Time-lapse state. `cursor` is a fraction of the span; events older than the
 // cursor persist but fade, so the accumulating pattern stays visible rather
 // than each strike blinking out of existence.
@@ -187,19 +188,21 @@ function ageOpacity(e){
   return age<=0?1:Math.max(0.12,1-age*0.88);
 }
 function kmToDegLat(km){return km/111.32}
-function draw(){
+// Rendering is split in two because the two costs have different
+// frequencies: geometry changes only when the view or filters change,
+// while opacity changes every animation frame. Rebuilding 17k nodes per
+// frame cost ~22ms and blew the 16.7ms budget; now a frame touches only
+// the handful of events inside the fade window.
+function rebuild(){
   if(layer) layer.remove();
   layer=el("g"); scene.append(layer);
   const showUnc=$("#showUnc").checked, hide=$("#hideUnusable").checked;
   const scale=Math.sqrt(view.w/360);
-  let shown=0, elapsed=0;
+  visible=[];
   for(const e of events){
+    e.node=null; e.op=-1;
     if(hide && e.loc==="unusable") continue;
-    const op=ageOpacity(e);
-    if(op<=0) continue;                       // future relative to the cursor
-    shown++; if(e.t<=cursorMs()) elapsed++;
     const g=el("g"); g.setAttribute("class",e.cls);
-    if(op<1) g.setAttribute("opacity",op.toFixed(3));
     if(showUnc && e.unc>0){
       const c=el("ellipse");
       c.setAttribute("cx",e.lon); c.setAttribute("cy",-e.lat);
@@ -213,13 +216,63 @@ function draw(){
     c.setAttribute("r",Math.max(0.15,r*0.5));
     c.setAttribute("class","pt");
     c.addEventListener("click",ev=>{ev.stopPropagation();show(e)});
-    g.append(c); layer.append(g);
+    g.append(c);
+    e.node=g; visible.push(e);
+    layer.append(g);
   }
-  $("#meta").textContent=`${shown} of ${events.length} events shown · click a point for detail`;
-  $("#clock").textContent = events.length? fmt(cursorMs()) : "—";
-  $("#tally").textContent = events.length? `${elapsed} / ${events.length}` : "";
+  applyTime(true);
+}
+// Index of the last event at or before time t (visible[] is time-sorted).
+function upperBound(t){
+  let lo=0, hi=visible.length;
+  while(lo<hi){ const mid=(lo+hi)>>1; if(visible[mid].t<=t) lo=mid+1; else hi=mid; }
+  return lo-1;
+}
+function applyTime(force){
+  const now=cursorMs();
+  const iNow=upperBound(now);
+  const iFade=upperBound(now-FADE_DAYS*86400000);
+  const isStatic=(cursor>=1 && !playing);
+
+  // Everything strictly after the cursor is hidden; everything older than
+  // the fade window sits at the floor. Only the band between them changes
+  // from frame to frame, so only that band is written.
+  if(force || iNow!==prevNow || isStatic!==prevStatic){
+    const lo=Math.min(prevNow,iNow), hi=Math.max(prevNow,iNow);
+    for(let i=Math.max(0,lo); i<=Math.min(visible.length-1,hi); i++){
+      setOp(visible[i], i<=iNow ? null : 0);
+    }
+    if(force){
+      for(let i=0;i<visible.length;i++) setOp(visible[i], i<=iNow ? null : 0);
+    }
+  }
+  for(let i=Math.max(0,iFade); i<=Math.min(visible.length-1,iNow); i++){
+    setOp(visible[i], null);
+  }
+  if(iFade>prevFade){
+    for(let i=Math.max(0,prevFade); i<=Math.min(visible.length-1,iFade); i++){
+      setOp(visible[i], null);
+    }
+  }
+  prevNow=iNow; prevFade=iFade; prevStatic=isStatic;
+
+  const shown=iNow+1;
+  $("#meta").textContent=`${visible.length} of ${events.length} events plotted · click a point for detail`;
+  $("#clock").textContent = events.length? fmt(now) : "—";
+  $("#tally").textContent = events.length? `${Math.max(0,shown)} / ${events.length}` : "";
   updateDayNight();
 }
+function setOp(e, forced){
+  if(!e || !e.node) return;
+  const op = forced!==null ? forced : ageOpacity(e);
+  // Skip sub-perceptual writes: the DOM mutation is the expensive part.
+  if(e.op>=0 && Math.abs(op-e.op)<0.02) return;
+  e.op=op;
+  if(op<=0){ e.node.style.display="none"; }
+  else { e.node.style.display=""; e.node.setAttribute("opacity",op.toFixed(2)); }
+}
+const draw = rebuild;   // callers that change geometry
+
 function show(e){
   const p=$("#panel"); p.hidden=false; p.textContent="";
   const h=document.createElement("h2"); h.textContent=e.cls.replace(/-/g," ");
@@ -289,7 +342,7 @@ svg.addEventListener("wheel",e=>{
 function setCursor(c){
   cursor=Math.max(0,Math.min(1,c));
   $("#scrub").value=String(Math.round(cursor*1000));
-  draw();
+  applyTime(true);
 }
 function stop(){ playing=false; if(raf)cancelAnimationFrame(raf); raf=null; $("#play").textContent="▶ play"; }
 function tick(ts){
@@ -298,9 +351,9 @@ function tick(ts){
   const daysPerSec=Number($("#speed").value);
   const spanDays=(tspan.max-tspan.min)/86400000 || 1;
   cursor += (dt*daysPerSec)/spanDays;
-  if(cursor>=1){ setCursor(1); stop(); return; }
+  if(cursor>=1){ cursor=1; stop(); setCursor(1); return; }
   $("#scrub").value=String(Math.round(cursor*1000));
-  draw();
+  applyTime(false);
   raf=requestAnimationFrame(tick);
 }
 $("#play").onclick=()=>{
@@ -313,7 +366,7 @@ $("#scrub").oninput=e=>{ stop(); setCursor(Number(e.target.value)/1000); };
 $("#speed").onchange=()=>{ lastFrame=0; };
 $("#fit").onclick=fit;
 $("#world").onclick=()=>{view={x:-180,y:-90,w:360,h:180};applyView();draw()};
-$("#showUnc").onchange=draw; $("#hideUnusable").onchange=draw;
+$("#showUnc").onchange=rebuild; $("#hideUnusable").onchange=rebuild;
 addEventListener("resize",applyView);
 svg.addEventListener("click",()=>$("#panel").hidden=true);
 
