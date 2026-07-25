@@ -1,0 +1,12 @@
+// Generated from version.hpp.in by CMake — single source of version truth is
+// the project() VERSION in the root CMakeLists.txt (SemVer 2.0.0, REQ-10.7).
+#pragma once
+
+namespace kst {
+
+inline constexpr const char* kVersion = "@PROJECT_VERSION@";
+
+// Human-readable one-liner for --version output.
+const char* version_string();
+
+}  // namespace kst

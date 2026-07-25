@@ -16,6 +16,11 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   layer) added — 103 requirements total.
 
 ### Added
+- Build skeleton (issue #5): CMake project, `kst_core` static library separated from the
+  thin `kst` CLI (REQ-9.2), stdlib-only test harness registered with CTest (REQ-10.2),
+  warnings-as-errors set documented in the root CMakeLists (REQ-9.7). CLI verbs from
+  REQ-8.1 present as honest stubs (exit 2, not fake success).
+- Phase 2 backlog seeded as issues #5–#19, each traced to its requirements.
 - `requirements/evidence/isc-iran-jun2025.txt` — ISC FDSN query result (OQ-07 spike):
   thirteen IDC (CTBTO) depth-0.0 origins clustered on June 2025 strike nights, basis for
   ASM-08 and validation case VC-04.

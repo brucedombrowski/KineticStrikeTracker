@@ -8,7 +8,7 @@ region of interest (initial default: Iran and surrounding areas). Coverage is ex
 system distinguishes "no events" from "no coverage", and maps grey out what its sources cannot
 see. Sources are pluggable adapters, added as desired and as available.
 
-**Status:** Phase 1 — requirements definition. No implementation yet.
+**Status:** Phase 2 — implementation underway against the draft baseline; requirements v1.0 promotion pending human review. Build: `cmake -B build && cmake --build build && ctest --test-dir build`.
 
 ---
 
