@@ -2,7 +2,7 @@
   "document_id": "REQ-2026-001",
   "title": "Kinetic Strike Tracker — Requirements Specification",
   "project": "KineticStrikeTracker",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "status": "draft-pending-human-review",
   "date": "2026-07-25",
   "author": "AI agent (Claude), drafted for human review",
@@ -1119,7 +1119,13 @@
       ]
     }
   ],
-  "open_questions": [],
+  "open_questions": [
+    {
+      "id": "OQ-08",
+      "question": "Raw-response retention policy. REQ-4.5 makes the raw store append-only and REQ-2.10 requires persisting every response, so with whole-Earth scope (REQ-1.1) and repeated ingestion the database grows without bound — a single year of daily multi-source polling is plausibly tens of GB. Three options: (a) truly unbounded, simplest and most faithful to REQ-4.5, disk grows forever; (b) age-based export of old raw bodies to external files, keeping digests and metadata in the database so provenance chains still resolve (REQ-7.4) while the working DB stays lean; (c) content-addressed dedup, storing each distinct body once keyed by SHA-256 — successive polls of an unchanged window return byte-identical bodies, so this is likely a large win with zero information loss, and it composes with either (a) or (b).",
+      "disposition": "Open. Recommend adopting (c) unconditionally as a storage detail invisible to callers, then deciding between (a) and (b) once real ingestion volume is measured. Raised by implementation of issue #8; no requirement currently addresses retention."
+    }
+  ],
   "resolved_questions": [
     {
       "id": "OQ-01",
