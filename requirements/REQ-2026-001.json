@@ -1,0 +1,887 @@
+{
+  "document_id": "REQ-2026-001",
+  "title": "Kinetic Strike Tracker — Requirements Specification",
+  "project": "KineticStrikeTracker",
+  "version": "0.1.0",
+  "status": "draft-pending-human-review",
+  "date": "2026-07-25",
+  "author": "AI agent (Claude Opus 5), drafted for human review",
+  "reviewer": "TBD — Bruce Dombrowski",
+  "process": "https://github.com/brucedombrowski/systems-engineering — Phase 1: Requirements Capture",
+  "keyword_convention": "RFC 2119",
+  "notes": [
+    "Per SE process principle 1 (review over authoring), this document is a DRAFT. It becomes the v1.0 baseline only after human review and an approving commit.",
+    "Requirement IDs are stable per IEEE 29148. Do not renumber; deprecate instead.",
+    "Priority values: mandatory (SHALL), recommended (SHOULD), optional (MAY).",
+    "Verification methods: inspection, test, analysis, demonstration."
+  ],
+
+  "governing_standards": [
+    { "id": "RFC 2119",            "title": "Key words for use in RFCs to Indicate Requirement Levels",        "application": "Requirement level keywords" },
+    { "id": "IEEE 29148-2018",     "title": "Systems and software engineering — Requirements engineering",     "application": "Requirement structure, uniqueness, verifiability" },
+    { "id": "ISO/IEC 25010",       "title": "Systems and software Quality Requirements and Evaluation",        "application": "Non-functional quality attributes" },
+    { "id": "ISO 8601-1:2019",     "title": "Date and time — Representations for information interchange",     "application": "All timestamps" },
+    { "id": "ISO/IEC 14882:2020",  "title": "Programming languages — C++ (C++20)",                             "application": "Implementation language baseline" },
+    { "id": "FDSN WS 1.2",         "title": "FDSN Web Service Specifications v1.2",                            "application": "Seismic catalog query interface" },
+    { "id": "QuakeML 1.2",         "title": "QuakeML — seismic event data exchange format",                    "application": "Seismic event semantics" },
+    { "id": "RFC 7946",            "title": "The GeoJSON Format",                                              "application": "Geospatial interchange" },
+    { "id": "EPSG:4326 / WGS 84",  "title": "World Geodetic System 1984",                                      "application": "Coordinate reference system" },
+    { "id": "RFC 4122",            "title": "A Universally Unique IDentifier (UUID) URN Namespace",            "application": "Internal event identifiers" },
+    { "id": "SemVer 2.0.0",        "title": "Semantic Versioning",                                             "application": "Release versioning" },
+    { "id": "Keep a Changelog 1.1","title": "Keep a Changelog",                                                "application": "CHANGELOG.md structure" },
+    { "id": "NIST SP 800-53 AU-3", "title": "Content of Audit Records",                                        "application": "Provenance and audit logging" },
+    { "id": "NIST SP 800-53 CM-3", "title": "Configuration Change Control",                                    "application": "Git as audit trail" },
+    { "id": "SPDX 2.3",            "title": "Software Package Data Exchange",                                  "application": "License identification of ingested data" }
+  ],
+
+  "assumptions": [
+    {
+      "id": "ASM-01",
+      "text": "The USGS global catalog cannot resolve kinetic strikes over the region of interest. This was measured, not assumed: a query of the USGS FDSN event service for 2025-06-01 to 2025-07-05 over the box 31.5-36.5 N, 49.0-53.5 E — containing Fordow, Natanz and Isfahan, and spanning the entire June 2025 campaign — with NO minimum magnitude returned exactly two events, neither at any struck site. The 2025-06-22 strike on Fordow produced no catalogued USGS event whatsoever. A broader query over 25-40 N, 44-64 E returned nothing below M4.1.",
+      "consequence": "Magnitude of completeness for USGS over Iran is approximately M4.0. Munition-scale events couple at roughly M2.0-M2.5 — two to three orders of magnitude in energy below that floor. Global-catalog sources alone are therefore insufficient, and REQ-2.4 (regional networks) is mandatory rather than recommended.",
+      "evidence": "requirements/evidence/usgs-iran-jun2025.json"
+    },
+    {
+      "id": "ASM-01b",
+      "text": "Detecting events below regional catalog completeness requires independent processing of raw station waveforms — arrival-time picking across multiple stations followed by hypocentre inversion — rather than consumption of pre-computed catalog origins.",
+      "consequence": "Catalog ingestion alone bounds the system to events someone else already located. Independent triangulation (REQ-5.8, REQ-5.9) is the only path to the sub-threshold regime where most strikes occur, and is therefore the system's principal technical differentiator rather than an optional enhancement."
+    },
+    {
+      "id": "ASM-02",
+      "text": "Magnitude of completeness (Mc) for the Iranian Seismological Center catalog is spatially and temporally heterogeneous, and roughly 19% of catalog entries are reported in the literature to be non-tectonic (quarry and mine blasts).",
+      "consequence": "Anthropogenic-source contamination is expected and is a discrimination problem the system must address explicitly, not an anomaly."
+    },
+    {
+      "id": "ASM-03",
+      "text": "Iran is tectonically active. Natural seismicity is the dominant signal in the region of interest and constitutes the primary false-positive source.",
+      "consequence": "Discrimination and confidence scoring are core functions, not enhancements."
+    },
+    {
+      "id": "ASM-04",
+      "text": "All data sources are open, publicly accessible, and unclassified. The system holds no classified, CUI, or otherwise controlled information.",
+      "consequence": "NIST SP 800-171 controls are not levied. Baseline hygiene and licence compliance apply."
+    },
+    {
+      "id": "ASM-05",
+      "text": "Development and initial target environment are the same machine: Apple Silicon (arm64) MacBook Pro running macOS with Xcode Command Line Tools.",
+      "consequence": "Single-platform v1. Portability is designed for but not verified on other platforms in v1."
+    },
+    {
+      "id": "ASM-06",
+      "text": "All ingested data — whether retrieved over the network or read from a local file — originates outside the trust boundary and is potentially hostile. This includes deliberately malformed structured data, adversarially crafted free text, and files supplied by a third party.",
+      "consequence": "Every parser and every output path is an attack surface. Input validation is a distinct requirement category (category 12), not an implementation detail."
+    },
+    {
+      "id": "ASM-07",
+      "text": "The project is developed openly: a public repository, open source licence, and a public development record in which planning discussions and agent interactions are published as issues.",
+      "consequence": "No credential, private datum, or unreviewed personal information may enter the repository at any point (REQ-10.6, REQ-13.3)."
+    }
+  ],
+
+  "categories": [
+
+    {
+      "name": "Mission and Scope",
+      "standard": "IEEE 29148-2018",
+      "requirements": [
+        {
+          "id": "REQ-1.1",
+          "standard": "IEEE 29148-2018", "section": "9.6.2 (Purpose)",
+          "text": "The system SHALL correlate objective, publicly available geophysical observations with open-source reporting to identify and characterise candidate kinetic strike events within a configurable geographic region of interest, initially Iran and surrounding areas.",
+          "priority": "mandatory", "verification": "demonstration"
+        },
+        {
+          "id": "REQ-1.2",
+          "standard": "IEEE 29148-2018", "section": "9.6.2",
+          "text": "The system SHALL be deterministic: for a given frozen input snapshot and a given configuration, every execution SHALL produce byte-identical analytical output.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "Determinism is the project's defining characteristic and the precondition for auditability and reproducible analysis. It forbids unseeded randomness, wall-clock dependence in analysis, and unordered-container iteration on any output path."
+        },
+        {
+          "id": "REQ-1.3",
+          "standard": "IEEE 29148-2018", "section": "9.6.2",
+          "text": "The system SHALL be retrospective and analytical in nature, operating on already-published observations of events that have already occurred.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-1.4",
+          "standard": "IEEE 29148-2018", "section": "9.6.6",
+          "text": "The system SHALL operate as a local, self-contained application requiring no server-side infrastructure for its v1 release.",
+          "priority": "mandatory", "verification": "demonstration"
+        },
+        {
+          "id": "REQ-1.5",
+          "standard": "ISO/IEC 25010", "section": "Portability / Modularity",
+          "text": "The system SHOULD be architected so that a future browser-accessible presentation layer can be added without modification to the analysis core.",
+          "priority": "recommended", "verification": "inspection",
+          "rationale": "Stated intent to make this a public tool eventually. Enforced by REQ-9.2 (core/UI separation)."
+        }
+      ]
+    },
+
+    {
+      "name": "Data Sources and Ingestion",
+      "standard": "FDSN WS 1.2",
+      "requirements": [
+        {
+          "id": "REQ-2.1",
+          "standard": "ISO/IEC 25010", "section": "Modularity",
+          "text": "The system SHALL define a source-adapter interface such that each data source is implemented as an independent, separately testable adapter, and SHALL support adding a new source without modification to the analysis core.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-2.2",
+          "standard": "FDSN WS 1.2", "section": "Event service",
+          "text": "The system SHALL ingest seismic events from the USGS FDSN event web service at https://earthquake.usgs.gov/fdsnws/event/1/query, using GeoJSON output and supporting the starttime, endtime, minlatitude, maxlatitude, minlongitude, maxlongitude, mindepth, maxdepth, minmagnitude, eventtype, orderby and limit parameters.",
+          "priority": "mandatory", "verification": "test",
+          "notes": "Service caps results at 20000 per query and returns HTTP 400 above that; see REQ-2.8."
+        },
+        {
+          "id": "REQ-2.3",
+          "standard": "FDSN WS 1.2", "section": "Event service",
+          "text": "The system SHALL ingest seismic events from the EMSC SeismicPortal FDSN event web service, which provides independent regional coverage of the European-Mediterranean and Middle East region.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "An independent second instrumental source is required for REQ-7.3 (independent corroboration) to be meaningful."
+        },
+        {
+          "id": "REQ-2.4",
+          "standard": "FDSN WS 1.2", "section": "Federated services",
+          "text": "The system SHALL ingest events from regional networks having lower magnitude of completeness over the region of interest, including the Iranian Seismological Center (IRSC) and neighbouring national networks (e.g. Turkey AFAD/KOERI, and other federated FDSN data centres serving the region).",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "Upgraded from recommended to mandatory on measured evidence. Per ASM-01, the USGS global catalog contains no event for the June 2025 strikes at any magnitude. Regional networks are the only catalogs whose completeness reaches the M2.0-M2.5 regime in which munition-scale events couple. Without this requirement the system cannot detect its primary subject matter."
+        },
+        {
+          "id": "REQ-2.5",
+          "standard": "NIST SP 800-53 AU-3", "section": "Content of Audit Records",
+          "text": "The system SHALL ingest official government statements as a source class, including U.S. Central Command (USCENTCOM) public releases and press releases via its published RSS feeds.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-2.6",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHOULD ingest curated conflict-event datasets that publish a documented coding methodology, including ACLED (Armed Conflict Location & Event Data).",
+          "priority": "recommended", "verification": "test",
+          "notes": "ACLED API access requires free registration; credentials are configuration, never committed (REQ-10.6)."
+        },
+        {
+          "id": "REQ-2.7",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system MAY ingest news media and social media reporting as a corroborating source class, provided such reports are assigned the reduced confidence weighting defined in REQ-7.2 and are never used as the sole basis for a high-confidence assessment.",
+          "priority": "optional", "verification": "analysis",
+          "rationale": "Explicit user direction: news sources are acceptable, but confidence is correspondingly lower."
+        },
+        {
+          "id": "REQ-2.8",
+          "standard": "FDSN WS 1.2", "section": "Query limits",
+          "text": "Each adapter SHALL respect the documented query limits, pagination semantics, terms of service, and rate limits of its upstream source, and SHALL partition oversized time ranges into compliant sub-queries rather than issuing a request that would be rejected.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-2.9",
+          "standard": "ISO/IEC 25010", "section": "Fault tolerance",
+          "text": "The failure, timeout, or unavailability of any single source adapter SHALL NOT terminate the ingestion run. The system SHALL record the failure, continue with remaining sources, and mark the resulting analysis as having incomplete source coverage.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-2.10",
+          "standard": "NIST SP 800-53 AU-3", "section": "Content of Audit Records",
+          "text": "The system SHALL persist the unmodified raw response of every successful source query, together with the request URL, request timestamp (UTC), HTTP status, and a SHA-256 digest of the response body.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "Raw-response retention is what makes REQ-1.2 determinism testable: an analysis can be replayed against a frozen snapshot without re-querying the network."
+        },
+        {
+          "id": "REQ-2.11",
+          "standard": "ISO/IEC 25010", "section": "Reusability",
+          "text": "The system SHALL support an offline replay mode that performs a complete analysis run against previously persisted raw responses with no network access whatsoever.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-2.12",
+          "standard": "SPDX 2.3", "section": "License identification",
+          "text": "Each source adapter SHALL declare the licence or terms of use of the data it retrieves, and the system SHALL surface required attribution in its outputs.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-2.13",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL support ingestion from local files as a first-class source class, accepting at minimum GeoJSON, QuakeML, CSV, and JSON, so that manually curated datasets, archived downloads, and datasets lacking a public API may be incorporated.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "Several relevant sources publish bulk downloads rather than queryable APIs. File ingestion also underpins the offline replay mode of REQ-2.11 and the test fixtures of REQ-10.4."
+        },
+        {
+          "id": "REQ-2.14",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "File-sourced input SHALL be subject to the same validation, provenance recording, and untrusted-input handling as network-sourced input, and SHALL NOT be granted elevated trust by virtue of being local.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "A file on disk carries no more assurance than an HTTP response; it may have arrived from anywhere. See category 12."
+        },
+        {
+          "id": "REQ-2.15",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL ingest space-based thermal anomaly detections from NASA FIRMS (VIIRS 375 m and MODIS active fire products) as a class A instrumental source, retaining detection time, coordinates, confidence, and fire radiative power.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "FIRMS publishes discrete detections with time and position rather than raw imagery, so it normalises into the Observation model of REQ-3.1 directly. It is an instrumental observation independent of the seismic networks, and it detects strikes that produce fire but no resolvable seismic signal — directly addressing the ASM-01 detection gap. Near-real-time latency is approximately 3 hours."
+        },
+        {
+          "id": "REQ-2.16",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system MAY ingest openly licensed satellite imagery products, including Copernicus Sentinel-1 synthetic aperture radar and Sentinel-2 optical data, to support change detection and damage assessment.",
+          "priority": "optional", "verification": "analysis",
+          "notes": "Deferred beyond v1. Unlike FIRMS, these are raster products requiring an imagery processing pipeline rather than event normalisation. SAR coherence change detection is the technique of interest and is unaffected by cloud or darkness."
+        },
+        {
+          "id": "REQ-2.17",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "Where a source publishes both an authoritative catalog and a preliminary or automatic feed, the system SHALL record which was used and SHALL update an observation when the authoritative revision supersedes a preliminary one, retaining the prior value.",
+          "priority": "recommended", "verification": "test",
+          "rationale": "Seismic origins are routinely revised after initial automatic publication. Silently overwriting would destroy the audit trail; ignoring revisions would retain known-superseded values."
+        }
+      ]
+    },
+
+    {
+      "name": "Event Data Model and Normalisation",
+      "standard": "QuakeML 1.2",
+      "requirements": [
+        {
+          "id": "REQ-3.1",
+          "standard": "QuakeML 1.2", "section": "Event",
+          "text": "The system SHALL normalise every ingested record into a common internal Observation model, independent of source, comprising at minimum: internal identifier, source identifier, native source event identifier, source class, origin time, latitude, longitude, depth, magnitude with magnitude type, location uncertainty, reported event type, and free-text description.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-3.2",
+          "standard": "ISO 8601-1:2019", "section": "4.3",
+          "text": "All timestamps SHALL be stored, compared, and emitted in UTC using ISO 8601 representation with explicit timezone designator and millisecond precision. Local time SHALL NOT be used in storage or analysis.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-3.3",
+          "standard": "EPSG:4326 / WGS 84", "section": "CRS definition",
+          "text": "All coordinates SHALL be stored as decimal degrees in WGS 84 (EPSG:4326), latitude in [-90, 90] and longitude in [-180, 180], with longitude normalised on ingest.",
+          "priority": "mandatory", "verification": "test",
+          "notes": "The USGS service accepts longitude in [-360, 360]; normalisation on ingest is therefore mandatory, not incidental."
+        },
+        {
+          "id": "REQ-3.4",
+          "standard": "QuakeML 1.2", "section": "Magnitude",
+          "text": "The system SHALL retain the native magnitude type (e.g. mb, ML, Mw, MN, md) alongside every magnitude value and SHALL NOT convert between magnitude types silently.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "Magnitude estimates for the same event differ measurably between networks; silent conversion would fabricate precision."
+        },
+        {
+          "id": "REQ-3.5",
+          "standard": "RFC 4122", "section": "4.3",
+          "text": "Every Observation SHALL carry a stable internal identifier derived deterministically from its source identifier and native event identifier, such that re-ingesting the same record yields the same internal identifier.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "A random UUID would violate REQ-1.2. The identifier must be a pure function of the record."
+        },
+        {
+          "id": "REQ-3.6",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL preserve the reported quantities exactly as published and SHALL record any derived or inferred quantity as a separate, clearly labelled field.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-3.7",
+          "standard": "ISO/IEC 25010", "section": "Functional correctness",
+          "text": "The system SHALL reject and log, rather than silently discard, any record failing schema or range validation.",
+          "priority": "mandatory", "verification": "test"
+        }
+      ]
+    },
+
+    {
+      "name": "Persistence",
+      "standard": "ISO/IEC 25010",
+      "requirements": [
+        {
+          "id": "REQ-4.1",
+          "standard": "ISO/IEC 25010", "section": "Portability",
+          "text": "The system SHALL persist all normalised observations, raw responses, correlations, assessments, and run metadata in a single local SQLite database file.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "SQLite ships with macOS, satisfying the stdlib-first dependency posture (REQ-9.4)."
+        },
+        {
+          "id": "REQ-4.2",
+          "standard": "NIST SP 800-53 CM-3", "section": "Configuration Change Control",
+          "text": "The database SHALL carry a schema version, and the system SHALL apply forward migrations deterministically and refuse to operate against a schema version it does not recognise.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-4.3",
+          "standard": "ISO/IEC 25010", "section": "Functional correctness",
+          "text": "Ingestion SHALL be idempotent: re-ingesting an already-stored record SHALL update it in place rather than creating a duplicate, and SHALL leave the analytical result unchanged if the record is unchanged.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-4.4",
+          "standard": "NIST SP 800-53 AU-3", "section": "Content of Audit Records",
+          "text": "The system SHALL record, for every analysis run: run identifier, software version, git commit hash, configuration digest, source snapshot digests, and start and end timestamps in UTC.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-4.5",
+          "standard": "ISO/IEC 25010", "section": "Recoverability",
+          "text": "The system SHALL NOT modify or delete previously persisted raw responses; the raw response store SHALL be append-only.",
+          "priority": "mandatory", "verification": "inspection"
+        }
+      ]
+    },
+
+    {
+      "name": "Discrimination and Classification",
+      "standard": "Seismic source discrimination literature",
+      "requirements": [
+        {
+          "id": "REQ-5.1",
+          "standard": "QuakeML 1.2", "section": "EventType",
+          "text": "The system SHALL classify each seismic observation against the candidate source hypotheses: natural earthquake, surface or near-surface explosion, quarry or mine blast, and indeterminate.",
+          "priority": "mandatory", "verification": "analysis"
+        },
+        {
+          "id": "REQ-5.2",
+          "standard": "Seismic discrimination literature", "section": "Depth discriminant",
+          "text": "The system SHALL apply reported focal depth as a discriminant, treating very shallow or fixed-at-zero depths as consistent with a surface or near-surface source, while accounting for the fact that poorly constrained depths are frequently reported as fixed values.",
+          "priority": "mandatory", "verification": "analysis",
+          "rationale": "A depth fixed at 0 or 10 km by the locating agency is a processing artefact, not a measurement; treating it as evidence of a surface source would be a systematic false-positive generator."
+        },
+        {
+          "id": "REQ-5.3",
+          "standard": "Seismic discrimination literature", "section": "mb:Ms discriminant",
+          "text": "The system SHOULD apply the mb:Ms magnitude-ratio discriminant where both body-wave and surface-wave magnitudes are published for an event.",
+          "priority": "recommended", "verification": "analysis",
+          "notes": "Literature indicates the spectral contribution to mb:Ms separation vanishes below approximately mb 4.5, so this discriminant is of limited value for the small events dominating this problem. Its limits SHALL be documented per REQ-5.7."
+        },
+        {
+          "id": "REQ-5.4",
+          "standard": "Seismic discrimination literature", "section": "P/S amplitude ratio",
+          "text": "The system MAY apply P/S amplitude-ratio discrimination in the approximate 10-18 Hz band, which requires ingestion of waveform data rather than catalog parameters alone.",
+          "priority": "optional", "verification": "analysis",
+          "rationale": "Explosions generate P waves more efficiently than S waves relative to earthquakes, and the discriminant strengthens at higher frequencies. Deferred beyond v1 because it requires an FDSN dataselect waveform pipeline and signal processing well beyond catalog ingestion."
+        },
+        {
+          "id": "REQ-5.5",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL apply a known-source exclusion, suppressing or down-weighting candidate events whose location coincides with a documented quarry, mine, or other recurring industrial blast site, and whose timing is consistent with that site's established pattern.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "Directly addresses ASM-02: roughly 19% of IRSC catalog entries are reported to be blasts rather than tectonic events."
+        },
+        {
+          "id": "REQ-5.6",
+          "standard": "ISO/IEC 25010", "section": "Functional correctness",
+          "text": "Every discrimination criterion SHALL be implemented as an explicit, published, human-auditable rule with stated numeric thresholds. The system SHALL NOT use opaque or statistically trained classification for source discrimination in v1.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "Required by REQ-1.2 (determinism) and by the auditability premise of the project."
+        },
+        {
+          "id": "REQ-5.7",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL document, alongside each discriminant, the magnitude and distance range over which that discriminant is considered valid, and SHALL NOT apply a discriminant outside its stated range of validity.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-5.8",
+          "standard": "FDSN WS 1.2", "section": "dataselect / station services",
+          "text": "The system SHOULD retrieve raw waveform data for stations within regional distance of the area of interest via the FDSN dataselect and station web services, together with the instrument metadata required to interpret it.",
+          "priority": "recommended", "verification": "test",
+          "rationale": "Prerequisite for REQ-5.9. Waveform access is what distinguishes this system from a catalog aggregator; per ASM-01b, catalog origins cannot reach the sub-threshold regime where strikes occur."
+        },
+        {
+          "id": "REQ-5.9",
+          "standard": "Seismological practice", "section": "Hypocentre determination",
+          "text": "The system SHOULD determine an independent hypocentre by picking phase arrival times across three or more stations and inverting for origin time and location against a documented regional velocity model, and SHALL report the resulting location uncertainty rather than a bare point estimate.",
+          "priority": "recommended", "verification": "analysis",
+          "rationale": "Independent triangulation is the only mechanism by which the system can locate an event that no agency has catalogued. A location without an uncertainty estimate is not a scientific result, and for events near the detection floor the uncertainty ellipse may be large enough to change what conclusions the location supports.",
+          "notes": "A minimum of three stations is required for a two-dimensional solution; four or more constrain depth. Station coverage geometry, not station count alone, governs solution quality — a poorly distributed network yields a poorly conditioned inversion regardless of how many stations contribute."
+        },
+        {
+          "id": "REQ-5.10",
+          "standard": "Seismological practice", "section": "Detection",
+          "text": "The system MAY apply template matching or waveform cross-correlation against known events to detect signals below the conventional single-station detection threshold.",
+          "priority": "optional", "verification": "analysis",
+          "notes": "Deferred beyond v1. Relevant because repeated strikes on a single site produce near-identical waveforms at a given station, making later strikes on an already-struck target detectable at signal levels where nothing would otherwise be picked."
+        },
+        {
+          "id": "REQ-5.11",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "Where the system computes its own hypocentre for an event that is also catalogued by an agency, it SHALL retain both solutions and SHALL NOT silently substitute one for the other.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "Divergence between an independent solution and a published one is itself an analytical signal and must remain visible."
+        }
+      ]
+    },
+
+    {
+      "name": "Correlation and Fusion",
+      "standard": "IEEE 29148-2018",
+      "requirements": [
+        {
+          "id": "REQ-6.1",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL correlate observations from different sources into a single candidate Event when they fall within configurable space and time association windows.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-6.2",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "Association windows SHALL be configurable and SHALL default to values that account for the differing spatial and temporal resolution of each source class, recognising that a news report may localise an event only to a city and a date, while a seismic origin is localised to kilometres and seconds.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-6.3",
+          "standard": "ISO/IEC 25010", "section": "Functional correctness",
+          "text": "The correlation algorithm SHALL be order-independent: the resulting set of candidate Events SHALL NOT depend on the order in which observations were ingested.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "A greedy first-match association would make output depend on ingestion order, violating REQ-1.2."
+        },
+        {
+          "id": "REQ-6.4",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL retain every constituent observation of a candidate Event, together with the specific criterion that caused each association, and SHALL NOT collapse constituents into a summary that discards the underlying records.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-6.5",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL de-duplicate the same physical event reported by multiple seismic networks under different native identifiers, and SHALL treat such de-duplicated origins as a single instrumental observation rather than as independent corroboration.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "USGS and EMSC frequently publish the same origin. Counting both as independent would inflate confidence. EMSC operates an EventID service mapping identifiers across institutions, which may support this."
+        },
+        {
+          "id": "REQ-6.6",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL support candidate Events that possess no seismic observation at all, formed solely from reporting sources.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "Follows directly from ASM-01: most strikes are below the seismic detection floor. Restricting Events to seismically detected ones would discard the majority of real events."
+        }
+      ]
+    },
+
+    {
+      "name": "Confidence and Provenance",
+      "standard": "NIST SP 800-53 AU-3",
+      "requirements": [
+        {
+          "id": "REQ-7.1",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL assign each candidate Event a confidence assessment computed by a published, deterministic formula, and SHALL emit the individual contributing factors alongside the resulting value.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-7.2",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL assign each source to a source class carrying a distinct confidence weight, in descending order of weight: (A) instrumental geophysical observation; (B) official government statement; (C) curated conflict dataset with published methodology; (D) established news media reporting; (E) social media or unattributed user-generated content.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "Direct user direction: news sources are permitted, with correspondingly lower confidence. The class structure makes that weighting explicit and auditable rather than implicit."
+        },
+        {
+          "id": "REQ-7.3",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "Confidence SHALL increase with the number of genuinely independent sources corroborating an Event, where sources sharing an upstream origin SHALL NOT be counted as independent.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "Wire-service syndication means twenty outlets may carry one report. Counting them as twenty independent corroborations is the single most likely way for this system to produce a confident wrong answer."
+        },
+        {
+          "id": "REQ-7.4",
+          "standard": "NIST SP 800-53 AU-3", "section": "Content of Audit Records",
+          "text": "Every assertion the system emits SHALL be traceable to the specific source records supporting it, and the system SHALL be able to reproduce that provenance chain from stored data alone.",
+          "priority": "mandatory", "verification": "demonstration"
+        },
+        {
+          "id": "REQ-7.5",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL distinguish and separately represent the confidence that an event occurred, the confidence in its location, and the confidence in its characterisation as a kinetic strike.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "These are independent. A well-corroborated event may have poorly constrained location; a precisely located seismic event may be an ordinary earthquake."
+        },
+        {
+          "id": "REQ-7.6",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "The system SHALL record disconfirming evidence, including sources that reported no event or that attributed the event to a natural cause, and SHALL reflect such evidence in the confidence assessment.",
+          "priority": "mandatory", "verification": "test"
+        }
+      ]
+    },
+
+    {
+      "name": "Output and Reporting",
+      "standard": "RFC 7946",
+      "requirements": [
+        {
+          "id": "REQ-8.1",
+          "standard": "IEEE 29148-2018", "section": "9.6.3",
+          "text": "The system SHALL provide a command-line interface supporting, at minimum: ingest, analyse, replay, query, and report operations.",
+          "priority": "mandatory", "verification": "demonstration"
+        },
+        {
+          "id": "REQ-8.2",
+          "standard": "RFC 7946", "section": "1.4",
+          "text": "The system SHALL export candidate Events as GeoJSON conforming to RFC 7946, with confidence and provenance carried in feature properties.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "GeoJSON is directly consumable by mapping tools and by the future browser layer contemplated in REQ-1.5."
+        },
+        {
+          "id": "REQ-8.3",
+          "standard": "IEEE 29148-2018", "section": "9.6.3",
+          "text": "The system SHALL produce a human-readable report listing candidate Events with time, location, magnitude where available, contributing sources, confidence assessment, and classification.",
+          "priority": "mandatory", "verification": "demonstration"
+        },
+        {
+          "id": "REQ-8.4",
+          "standard": "ISO/IEC 25010", "section": "Interoperability",
+          "text": "All machine-readable output SHALL be emitted with stable key ordering and stable numeric formatting so that outputs of successive runs may be compared with a byte-level diff.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "This is what makes REQ-1.2 verifiable in practice."
+        },
+        {
+          "id": "REQ-8.5",
+          "standard": "SPDX 2.3", "section": "License identification",
+          "text": "Every output SHALL carry the attribution required by the licences of the data sources contributing to it.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-8.6",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "Every report SHALL state the detection limitations bearing on its content, and SHALL state explicitly that absence of a detected event is not evidence that no event occurred.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "Follows from ASM-01. Without this, a reader may reasonably but wrongly read a sparse report as a comprehensive census."
+        },
+        {
+          "id": "REQ-8.7",
+          "standard": "IEEE 29148-2018", "section": "9.6.5",
+          "text": "Reports SHALL clearly distinguish observed quantities from derived or inferred quantities.",
+          "priority": "mandatory", "verification": "inspection"
+        }
+      ]
+    },
+
+    {
+      "name": "Architecture and Implementation",
+      "standard": "ISO/IEC 14882:2020",
+      "requirements": [
+        {
+          "id": "REQ-9.1",
+          "standard": "ISO/IEC 14882:2020", "section": "Whole document",
+          "text": "The system SHALL be implemented in standard C++, compiling cleanly under the C++20 standard with Apple Clang on macOS arm64.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-9.2",
+          "standard": "ISO/IEC 25010", "section": "Modularity",
+          "text": "The system SHALL separate a presentation-independent core library from all user interface code, such that the core library contains no input or output logic beyond its defined interfaces.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "This is the requirement that makes REQ-1.5 (future browser layer) achievable rather than aspirational."
+        },
+        {
+          "id": "REQ-9.3",
+          "standard": "ISO/IEC 25010", "section": "Modularity",
+          "text": "The analysis core SHALL have no direct dependency on the network. All network access SHALL be confined to source adapters, and the core SHALL be exercisable entirely from stored data.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-9.4",
+          "standard": "ISO/IEC 14882:2020", "section": "Library introduction",
+          "text": "The system SHALL rely on the C++ standard library and operating-system-provided libraries to the greatest extent practicable. Third-party runtime dependencies SHALL be avoided, and any proposed third-party dependency SHALL require a recorded decision memorandum justifying it.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "Direct user direction. macOS provides libcurl, libsqlite3, and libz, so HTTPS retrieval and persistence are achievable with no third-party code. JSON parsing has no standard-library facility and is therefore expected to be implemented in-project."
+        },
+        {
+          "id": "REQ-9.5",
+          "standard": "ISO/IEC 25010", "section": "Portability",
+          "text": "Platform-specific code SHALL be isolated behind interfaces so that porting to another platform does not require modification of the analysis core.",
+          "priority": "recommended", "verification": "inspection"
+        },
+        {
+          "id": "REQ-9.6",
+          "standard": "ISO/IEC 14882:2020", "section": "Whole document",
+          "text": "The build SHALL succeed from a clean checkout on a macOS machine with only Xcode Command Line Tools installed, with no package-manager installation step required.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "Follows from REQ-9.4. Also bears on the build-system choice, which is an open decision (see open_questions)."
+        },
+        {
+          "id": "REQ-9.7",
+          "standard": "ISO/IEC 25010", "section": "Reliability",
+          "text": "The system SHALL treat compiler warnings as errors under a documented warning set, and SHALL NOT suppress a warning without a recorded justification.",
+          "priority": "recommended", "verification": "test"
+        }
+      ]
+    },
+
+    {
+      "name": "Non-Functional",
+      "standard": "ISO/IEC 25010",
+      "requirements": [
+        {
+          "id": "REQ-10.1",
+          "standard": "ISO/IEC 25010", "section": "Performance efficiency",
+          "text": "The system SHALL complete a full analysis run over one year of catalog data for the region of interest, from stored data, in under 60 seconds on the target machine.",
+          "priority": "recommended", "verification": "test",
+          "notes": "Threshold is provisional pending measurement of real data volume; to be confirmed at baseline review."
+        },
+        {
+          "id": "REQ-10.2",
+          "standard": "ISO/IEC 25010", "section": "Testability",
+          "text": "The system SHALL provide an automated test suite executable by a single command, covering at minimum: normalisation, correlation order-independence, discrimination thresholds, confidence computation, and end-to-end determinism.",
+          "priority": "mandatory", "verification": "demonstration"
+        },
+        {
+          "id": "REQ-10.3",
+          "standard": "NIST SP 800-53 SA-11", "section": "Developer Testing",
+          "text": "The test suite SHALL include a determinism test that executes a complete analysis twice against a fixed stored snapshot and asserts byte-identical output.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-10.4",
+          "standard": "ISO/IEC 25010", "section": "Testability",
+          "text": "Test fixtures SHALL include captured real responses from each supported source, committed to the repository, so that the suite runs without network access.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-10.5",
+          "standard": "ISO/IEC 25010", "section": "Security",
+          "text": "All network retrieval SHALL use TLS with certificate verification enabled. Certificate verification SHALL NOT be disabled.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-10.6",
+          "standard": "NIST SP 800-53 IA-5", "section": "Authenticator Management",
+          "text": "API keys and credentials SHALL be supplied by configuration or environment and SHALL NOT be committed to version control, appear in logs, or appear in outputs.",
+          "priority": "mandatory", "verification": "inspection",
+          "notes": "The repository is public. This requirement is load-bearing."
+        },
+        {
+          "id": "REQ-10.7",
+          "standard": "Keep a Changelog 1.1 / SemVer 2.0.0", "section": "Whole document",
+          "text": "The project SHALL maintain a CHANGELOG.md per Keep a Changelog and SHALL version releases per Semantic Versioning.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-10.8",
+          "standard": "ISO/IEC 25010", "section": "Reliability",
+          "text": "The system SHALL log its operations to a persistent log with UTC timestamps and severity levels sufficient to reconstruct a run after the fact.",
+          "priority": "mandatory", "verification": "inspection"
+        }
+      ]
+    },
+
+    {
+      "name": "Scope Exclusions and Use Constraints",
+      "standard": "IEEE 29148-2018",
+      "requirements": [
+        {
+          "id": "REQ-11.1",
+          "standard": "IEEE 29148-2018", "section": "9.6.2",
+          "text": "The system SHALL ingest only data that is publicly available and lawfully accessible. It SHALL NOT ingest classified, controlled unclassified, or access-restricted information.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-11.2",
+          "standard": "IEEE 29148-2018", "section": "9.6.2",
+          "text": "The system SHALL NOT provide targeting, aim-point, engagement, or other operational fire-support functionality. It is an after-the-fact analytical tool operating on published reports of events that have already occurred.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "Recorded as an explicit scope boundary so that the exclusion is auditable and cannot drift silently through feature accretion."
+        },
+        {
+          "id": "REQ-11.3",
+          "standard": "IEEE 29148-2018", "section": "9.6.2",
+          "text": "The system SHALL NOT identify, track, or profile private individuals. Its unit of analysis is the event, not the person.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-11.4",
+          "standard": "IEEE 29148-2018", "section": "9.6.2",
+          "text": "The system SHALL NOT present its assessments as authoritative or verified determinations of fact, and SHALL characterise its outputs as candidate assessments derived from open sources with stated confidence.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-11.5",
+          "standard": "IEEE 29148-2018", "section": "9.6.2",
+          "text": "Casualty estimation, damage assessment, and attribution of responsibility to a specific actor are outside the scope of v1. Where a source itself reports such information, the system SHALL carry it as a source-attributed quotation and SHALL NOT derive its own conclusion.",
+          "priority": "mandatory", "verification": "inspection"
+        }
+      ]
+    },
+
+    {
+      "name": "Input Validation and Untrusted Data Handling",
+      "standard": "NIST SP 800-53 SI-10",
+      "requirements": [
+        {
+          "id": "REQ-12.1",
+          "standard": "NIST SP 800-53 SI-10", "section": "Information Input Validation",
+          "text": "The system SHALL treat all ingested data, from every source and every transport including local files, as untrusted input, and SHALL validate it against an explicit schema before it is admitted to the data model.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-12.2",
+          "standard": "ISO/IEC 25010", "section": "Security",
+          "text": "All database access SHALL use parameterised statements. String concatenation SHALL NOT be used to construct any SQL statement incorporating source-derived data.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-12.3",
+          "standard": "ISO/IEC 25010", "section": "Security",
+          "text": "All parsers SHALL enforce documented bounds on input size, nesting depth, string length, array length, and numeric range, and SHALL fail safely on violation rather than exhausting memory or stack.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "A hand-written recursive-descent JSON parser, which REQ-9.4 makes likely, is trivially driven to stack exhaustion by deeply nested input unless depth is explicitly bounded. This is the most probable memory-safety defect in the system as specified."
+        },
+        {
+          "id": "REQ-12.4",
+          "standard": "ISO/IEC 25010", "section": "Security",
+          "text": "The system SHALL NOT execute, evaluate, deserialise into executable form, or pass to a shell any content derived from a source.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-12.5",
+          "standard": "NIST SP 800-53 SI-10", "section": "Information Input Validation",
+          "text": "File paths derived from configuration or source content SHALL be canonicalised and confirmed to resolve within an expected base directory, rejecting traversal sequences and symbolic links escaping that directory.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-12.6",
+          "standard": "ISO/IEC 25010", "section": "Security",
+          "text": "Source-derived text SHALL be neutralised for the specific output context in which it is rendered, including escaping of spreadsheet formula-initiating characters in CSV output, escaping of markup in any HTML output, and control-character stripping in terminal and log output.",
+          "priority": "mandatory", "verification": "test",
+          "rationale": "Free-text fields carry adversary-controlled content. CSV formula injection and terminal escape-sequence injection are both realised through fields that appear inert. The future browser layer of REQ-1.5 makes the markup case load-bearing."
+        },
+        {
+          "id": "REQ-12.7",
+          "standard": "ISO/IEC 25010", "section": "Security",
+          "text": "Source-derived free text SHALL be stored and processed strictly as data. Should any future component submit such text to a language model or other instruction-following system, that text SHALL be delimited and identified as untrusted content, and any instruction it contains SHALL NOT be acted upon.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "Ingesting adversary-authored news and social media text creates a prompt-injection path the moment that text reaches an instruction-following consumer. Recording the constraint now, while no such component exists, is cheaper than retrofitting it after one is added."
+        },
+        {
+          "id": "REQ-12.8",
+          "standard": "ISO/IEC 25010", "section": "Security",
+          "text": "The system SHALL validate TLS certificates on every retrieval, SHALL NOT follow redirects to non-TLS schemes, and SHALL bound response size, redirect count, and request timeout.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-12.9",
+          "standard": "NIST SP 800-53 SA-11", "section": "Developer Testing",
+          "text": "The test suite SHALL include malformed, adversarial, and boundary-case inputs for every parser, including truncated input, invalid encoding, deeply nested structures, oversized fields, and injection payloads for each output context.",
+          "priority": "mandatory", "verification": "test"
+        },
+        {
+          "id": "REQ-12.10",
+          "standard": "ISO/IEC 25010", "section": "Security",
+          "text": "The system SHALL record the integrity digest of every ingested file alongside its provenance, so that a later change to a file used in a prior analysis is detectable.",
+          "priority": "mandatory", "verification": "test"
+        }
+      ]
+    },
+
+    {
+      "name": "Open Development and Process Traceability",
+      "standard": "NIST SP 800-53 AU-3",
+      "requirements": [
+        {
+          "id": "REQ-13.1",
+          "standard": "SPDX 2.3", "section": "License identification",
+          "text": "The project SHALL be released under an OSI-approved open source licence, identified by SPDX identifier in a LICENSE file at the repository root and referenced from the README.",
+          "priority": "mandatory", "verification": "inspection",
+          "notes": "Satisfied: Apache-2.0 selected per DM-2026-002 (resolves OQ-02). LICENSE at repository root, SPDX identifier Apache-2.0."
+        },
+        {
+          "id": "REQ-13.2",
+          "standard": "NIST SP 800-53 AU-3", "section": "Content of Audit Records",
+          "text": "Planning and design sessions SHALL be archived to the public repository issue tracker as a transcript record, labelled to distinguish human direction from agent output, in accordance with Phase 5 of the governing systems engineering process.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "The development record is itself a project artifact under the open development posture of ASM-07. Session transcripts are retained locally by the agent harness and are published on explicit human direction."
+        },
+        {
+          "id": "REQ-13.3",
+          "standard": "NIST SP 800-53 IA-5", "section": "Authenticator Management",
+          "text": "Any transcript, log, or record published to the public repository SHALL be reviewed for credentials, personal information, and private third-party data before publication.",
+          "priority": "mandatory", "verification": "inspection",
+          "rationale": "Automatic publication of a raw session transcript to a public repository would otherwise be an uncontrolled disclosure path. Review is a precondition of publication, not a follow-up to it."
+        },
+        {
+          "id": "REQ-13.4",
+          "standard": "NIST SP 800-53 CM-3", "section": "Configuration Change Control",
+          "text": "Every design decision having more than one reasonable option SHALL be recorded as a decision memorandum under docs/decisions, numbered DM-YYYY-NNN, stating the options considered and the rationale for the selection.",
+          "priority": "mandatory", "verification": "inspection"
+        },
+        {
+          "id": "REQ-13.5",
+          "standard": "IEEE 29148-2018", "section": "5.2.8 (Traceability)",
+          "text": "Each requirement in this document SHALL be traceable forward to its implementing source location and its verifying test, recorded in a verification matrix under docs/verification.",
+          "priority": "mandatory", "verification": "inspection"
+        }
+      ]
+    }
+  ],
+
+  "open_questions": [
+    {
+      "id": "OQ-01",
+      "question": "Build system: hand-written Makefile (zero install, satisfies REQ-9.6 today) versus CMake (conventional for C++, better path to a future WASM or cross-platform build, but requires installing cmake, which is not currently present on the target machine).",
+      "disposition": "Requires DM-2026-001 (Phase 3 decision memorandum)."
+    },
+    {
+      "id": "OQ-02",
+      "question": "Which OSI-approved licence. Open source is decided (REQ-13.1); the specific licence is not. Apache-2.0 provides an express patent grant and a contributor patent-retaliation clause, which suits a publicly developed tool in a defence-adjacent domain; MIT is shorter and more permissive but grants no patent rights.",
+      "disposition": "RESOLVED 2026-07-25: Apache-2.0, by human directive. Recorded in DM-2026-002; LICENSE file added."
+    },
+    {
+      "id": "OQ-06",
+      "question": "Whether independent triangulation (REQ-5.8, REQ-5.9) is in scope for v1 or deferred. It is the capability that reaches below catalog threshold per ASM-01b, and is therefore the difference between a catalog aggregator and a detection system — but it is also, by a wide margin, the largest single body of work in this specification.",
+      "disposition": "Scope decision for baseline review. Currently marked recommended rather than mandatory pending that decision."
+    },
+    {
+      "id": "OQ-07",
+      "question": "Whether IRSC exposes a machine-readable interface, or whether regional catalog access requires HTML scraping or a federated FDSN data centre intermediary. REQ-2.4 is mandatory but its implementation route is unverified.",
+      "disposition": "Requires a spike before implementation planning. This is the highest-risk unknown in the specification, because REQ-2.4 is now load-bearing."
+    },
+    {
+      "id": "OQ-03",
+      "question": "Precise region-of-interest bounding box, and whether it is fixed or user-configurable per run.",
+      "disposition": "Assumed configurable per REQ-1.1; default extent to be set at baseline review."
+    },
+    {
+      "id": "OQ-04",
+      "question": "Whether v1 includes any news or social ingestion at all, or defers all of source class D and E to v2. REQ-2.7 currently makes it optional.",
+      "disposition": "Scope decision for baseline review."
+    },
+    {
+      "id": "OQ-05",
+      "question": "Whether the confidence assessment is emitted as a numeric score or as ordinal bands. Ordinal bands resist false precision; numeric scores sort and threshold more naturally.",
+      "disposition": "Requires a decision memorandum before REQ-7.1 is implemented."
+    }
+  ],
+
+  "deferred_to_future_release": [
+    "P/S spectral discrimination (REQ-5.4)",
+    "Template matching for sub-threshold detection (REQ-5.10)",
+    "Satellite imagery products and SAR change detection (REQ-2.16)",
+    "Browser-accessible presentation layer (REQ-1.5)",
+    "Real-time streaming ingestion via the EMSC WebSocket feed",
+    "Platforms other than macOS arm64"
+  ],
+
+  "validation_cases": [
+    {
+      "id": "VC-01",
+      "name": "June 2025 strikes on Iranian nuclear facilities",
+      "description": "Strikes on Fordow, Natanz and Isfahan during 13-25 June 2025. USGS catalogued no event at any struck site at any magnitude, while regional reporting indicates seismic signals near M2.5 at Fordow.",
+      "tests": "REQ-2.4 (regional networks are necessary), REQ-8.6 (absence of detection is not absence of event), ASM-01.",
+      "expected_behaviour": "The system detects nothing from USGS alone, and reports that source coverage was insufficient rather than reporting that no strike occurred."
+    },
+    {
+      "id": "VC-02",
+      "name": "Semnan M4.9, 2025-06-20 17:49:14 UTC, 35.396 N 53.025 E",
+      "description": "A natural earthquake of mww 4.9 west of Semnan, near Iranian missile and aerospace infrastructure, which prompted contemporaneous press speculation of an underground nuclear test.",
+      "tests": "REQ-5.1 (classification), REQ-7.2 (source class weighting), REQ-7.6 (disconfirming evidence), REQ-11.4 (no authoritative claims).",
+      "expected_behaviour": "Class A instrumental evidence classifies the event as a natural earthquake and outweighs class D speculation. The system records the conflict between source classes rather than resolving it silently in favour of either."
+    },
+    {
+      "id": "VC-03",
+      "name": "Fixed-depth artefact",
+      "description": "Every USGS origin returned for the region in the June 2025 window carries a depth of exactly 10.0 km, the agency's default for poorly constrained depths.",
+      "tests": "REQ-5.2 (depth discriminant must not treat fixed depths as measurements).",
+      "expected_behaviour": "The system recognises the fixed default and declines to apply the depth discriminant, rather than reading 10 km as evidence of a deep source or 0 km as evidence of a surface source."
+    }
+  ]
+}

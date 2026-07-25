@@ -1,0 +1,149 @@
+# =============================================================================
+# Base .gitignore Template
+# Source: https://github.com/brucedombrowski/systems-engineering
+# Derived from: https://github.com/brucedombrowski/security-toolkit
+# =============================================================================
+# Copy this file to your project as .gitignore and add project-specific
+# entries below the "Project-Specific" section.
+# =============================================================================
+
+# --- OS Files ---
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# --- Editor / IDE Files ---
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# --- Secrets & Credentials (CRITICAL — never commit) ---
+.env
+.env.*
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.secrets
+secrets.*
+credentials.*
+*.credential
+api_key*
+apikey*
+
+# --- SSH Keys ---
+id_rsa*
+id_ed25519*
+id_ecdsa*
+id_dsa*
+*.pub
+known_hosts
+authorized_keys
+
+# --- GPG Keys ---
+*.gpg
+*.asc
+secring.*
+pubring.*
+
+# --- AWS Credentials ---
+.aws/
+aws_access_key*
+aws_secret*
+
+# --- Controlled Unclassified Information (CUI) ---
+CUI*.*
+*CUI*
+*-CUI-*
+
+# --- Personally Identifiable Information (PII) ---
+PII*.*
+*PII*
+*-PII-*
+
+# --- Security Scan Results ---
+.scans/
+*-Scan-Results.md
+.allowlists/
+.assessments/
+.verification/
+
+# --- Vulnerability Scan Outputs (SENSITIVE) ---
+nmap-*.txt
+nmap-*.xml
+lynis-*.txt
+lynis-*.dat
+openvas-*.xml
+vulnerability-scan-*.txt
+host-inventory*.txt
+*-inventory-*.txt
+
+# --- Log Files ---
+*.log
+logs/
+
+# --- Database Dumps ---
+*.sql
+*.dump
+*.bak
+
+# --- Temporary Files ---
+*.tmp
+*.temp
+~$*
+
+# --- Claude Code ---
+.claude/
+
+# --- Cache ---
+.cache/
+
+# =============================================================================
+# Project-Specific (add entries below for your project type)
+# =============================================================================
+# LaTeX:      *.aux, *.bbl, *.blg, *.out, *.toc, *.fls, *.fdb_latexmk,
+#             *.synctex.gz, *.nav, *.snm, *.vrb, *.bcf, *.run.xml
+# Node.js:    node_modules/, dist/, .next/
+# Python:     __pycache__/, *.pyc, .venv/, .eggs/
+# PowerShell: *.Locked, *_Test_*/
+# Bash:       .builds/, .dist/
+
+# =============================================================================
+# Project-Specific — KineticStrikeTracker (C++ / macOS)
+# =============================================================================
+
+# --- Build output ---
+build/
+bin/
+obj/
+*.o
+*.a
+*.dylib
+*.dSYM/
+compile_commands.json
+.cache/
+
+# --- Runtime data (regenerable; raw source snapshots are large) ---
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/raw/
+*.log
+
+# --- Credentials (ACLED / FIRMS keys — REQ-10.6, repo is PUBLIC) ---
+config.local.*
+*.mapkey
+
+# --- Kept deliberately: test fixtures and requirements evidence (REQ-10.4) ---
+!tests/fixtures/**
+!requirements/evidence/**
