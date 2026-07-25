@@ -31,6 +31,12 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   layer) added — 103 requirements total.
 
 ### Added
+- HTTPS retrieval layer `kst::http` (issue #7) over OS-provided libcurl 8.7.1 and
+  CommonCrypto — no third-party dependency (REQ-9.4). TLS verification always on with no
+  interface to disable it, TLS 1.2 floor per RFC 8446 (REQ-10.5); https-only with
+  redirects barred from downgrading, bounded response size, redirect count and timeouts
+  (REQ-12.8); SHA-256 digest and UTC request timestamp on every response (REQ-2.10).
+  Network confined to this layer (REQ-9.3). Tests run offline (REQ-10.4).
 - Bounded JSON parser `kst::json` (issue #6): strict RFC 8259, in-project per the
   stdlib-first posture (REQ-9.4). Explicit documented limits on input size, depth,
   string length, and member count (REQ-12.3); full UTF-8 and surrogate validation;

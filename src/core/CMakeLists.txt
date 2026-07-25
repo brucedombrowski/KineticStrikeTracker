@@ -3,6 +3,7 @@
 configure_file(kst/version.hpp.in generated/kst/version.hpp @ONLY)
 
 add_library(kst_core STATIC
+    http.cpp
     json.cpp
     version.cpp
 )
@@ -11,3 +12,8 @@ target_include_directories(kst_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_BINARY_DIR}/generated
 )
+
+# OS-provided libraries only (REQ-9.4): libcurl and CommonCrypto ship with
+# macOS, so neither is a third-party runtime dependency.
+find_package(CURL REQUIRED)
+target_link_libraries(kst_core PUBLIC CURL::libcurl)

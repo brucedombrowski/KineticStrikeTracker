@@ -13,3 +13,10 @@ target_include_directories(test_json PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_json PRIVATE
     KST_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 add_test(NAME json COMMAND test_json)
+
+add_executable(test_http test_http.cpp)
+target_link_libraries(test_http PRIVATE kst_core)
+target_include_directories(test_http PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(test_http PRIVATE
+    KST_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+add_test(NAME http COMMAND test_http)
