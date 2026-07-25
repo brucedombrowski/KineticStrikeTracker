@@ -147,3 +147,6 @@ config.local.*
 # --- Kept deliberately: test fixtures and requirements evidence (REQ-10.4) ---
 !tests/fixtures/**
 !requirements/evidence/**
+
+# --- Generated analysis output ---
+out/
