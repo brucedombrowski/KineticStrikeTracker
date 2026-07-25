@@ -3,8 +3,11 @@
 ## Project
 
 Deterministic open-source tool correlating public geophysical observations with open-source
-reporting to identify candidate kinetic strike events over Iran and surrounding areas.
-C++20, macOS arm64, local-first, public repository.
+reporting to identify candidate kinetic strike events. **Scope is Earth**: the data model is
+whole-planet, analyses are scoped by a configurable region of interest (initial default: Iran
+and surrounding areas), and coverage is explicit — regions we can't see render as unknown, not
+quiet (REQ-1.1, REQ-1.6, REQ-8.8). Sources are pluggable adapters, added as desired/available
+(REQ-2.1). C++20, macOS arm64, local-first, public repository.
 
 Read `requirements/REQ-2026-001.json` before proposing any change. It is authoritative.
 

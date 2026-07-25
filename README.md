@@ -1,8 +1,12 @@
 # Kinetic Strike Tracker
 
 A deterministic, open-source tool that correlates objective geophysical observations with
-open-source reporting to identify and characterise candidate kinetic strike events, initially
-over Iran and surrounding areas.
+open-source reporting to identify and characterise candidate kinetic strike events.
+
+**Scope is Earth.** The data model is whole-planet; each analysis is scoped by a configurable
+region of interest (initial default: Iran and surrounding areas). Coverage is explicit — the
+system distinguishes "no events" from "no coverage", and maps grey out what its sources cannot
+see. Sources are pluggable adapters, added as desired and as available.
 
 **Status:** Phase 1 — requirements definition. No implementation yet.
 
