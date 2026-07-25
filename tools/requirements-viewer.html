@@ -68,6 +68,20 @@
   #error { color: var(--shall); background: var(--card); border: 1px solid var(--shall);
            border-radius: 8px; padding: 1rem; display: none; }
   .hidden { display: none !important; }
+  /* --- Review mode --- */
+  .annot { margin-top: .5rem; padding-top: .4rem; border-top: 1px dashed var(--line);
+           display: flex; gap: .4rem; flex-wrap: wrap; align-items: flex-start; }
+  .vbtn { border: 1px solid var(--line); background: var(--bg); color: var(--muted);
+          border-radius: 6px; padding: .15rem .55rem; font-size: .75rem; cursor: pointer; }
+  .vbtn.sel[data-v="accept"] { color: var(--may);   border-color: var(--may);   font-weight: 700; }
+  .vbtn.sel[data-v="issue"]  { color: var(--shall); border-color: var(--shall); font-weight: 700; }
+  .vbtn.sel[data-v="question"]{ color: var(--should); border-color: var(--should); font-weight: 700; }
+  .annot textarea { flex: 1 1 16rem; min-height: 1.9rem; padding: .3rem .5rem; font: inherit;
+          font-size: .82rem; background: var(--bg); color: var(--fg);
+          border: 1px solid var(--line); border-radius: 6px; resize: vertical; }
+  [data-verdict="accept"]   { outline: 1px solid var(--may); }
+  [data-verdict="issue"]    { outline: 2px solid var(--shall); }
+  [data-verdict="question"] { outline: 2px solid var(--should); }
 </style>
 </head>
 <body>
@@ -81,6 +95,8 @@
     <button class="pbtn on" data-p="mandatory">SHALL</button>
     <button class="pbtn on" data-p="recommended">SHOULD</button>
     <button class="pbtn on" data-p="optional">MAY</button>
+    <button class="pbtn" id="ghissue">⬆ File review as GitHub issue</button>
+    <button class="pbtn" id="export">⬇ Export review file</button>
     <span id="count"></span>
   </div>
 
@@ -104,6 +120,76 @@ const el = (tag, cls, text) => {
 
 const state = { prio: new Set(["mandatory","recommended","optional"]), q: "" };
 
+// --- Review annotations: localStorage-backed, exportable, filed as GitHub issue ---
+const REPO_ISSUE_URL = "https://github.com/brucedombrowski/KineticStrikeTracker/issues/new";
+let storeKey = "kst-review";
+const loadAnnots = () => JSON.parse(localStorage.getItem(storeKey) || "{}");
+const saveAnnots = a => localStorage.setItem(storeKey, JSON.stringify(a));
+
+function annotate(box, id) {
+  const annots = loadAnnots();
+  const cur = annots[id] || {};
+  if (cur.verdict) box.dataset.verdict = cur.verdict;
+  const row = el("div", "annot");
+  const btns = {};
+  for (const [v, label] of [["accept","✓ OK"],["issue","✗ Issue"],["question","? Discuss"]]) {
+    const b = el("button", "vbtn" + (cur.verdict === v ? " sel" : ""), label);
+    b.dataset.v = v;
+    b.addEventListener("click", () => {
+      const a = loadAnnots();
+      const rec = a[id] || {};
+      if (rec.verdict === v) { delete rec.verdict; delete box.dataset.verdict;
+        Object.values(btns).forEach(x => x.classList.remove("sel")); }
+      else { rec.verdict = v; box.dataset.verdict = v;
+        Object.values(btns).forEach(x => x.classList.toggle("sel", x === b)); }
+      if (rec.verdict || rec.comment) a[id] = rec; else delete a[id];
+      saveAnnots(a); updateAnnotCount();
+    });
+    btns[v] = b;
+    row.append(b);
+  }
+  const ta = el("textarea");
+  ta.placeholder = "comment…";
+  ta.value = cur.comment || "";
+  ta.addEventListener("input", () => {
+    const a = loadAnnots();
+    const rec = a[id] || {};
+    rec.comment = ta.value.trim();
+    if (!rec.comment) delete rec.comment;
+    if (rec.verdict || rec.comment) a[id] = rec; else delete a[id];
+    saveAnnots(a); updateAnnotCount();
+  });
+  row.append(ta);
+  box.append(row);
+}
+
+let updateAnnotCount = () => {};
+
+function reviewPayload(d) {
+  return {
+    review_of: d.document_id + " v" + d.version,
+    reviewer: "human",
+    exported_at: new Date().toISOString(),
+    annotations: loadAnnots(),
+  };
+}
+
+function reviewMarkdown(d) {
+  const a = loadAnnots();
+  const ids = Object.keys(a).sort();
+  const lines = ["## Human review — " + d.document_id + " v" + d.version, "",
+    "Marked up in tools/requirements-viewer.html. Verdicts: OK / Issue / Discuss.", ""];
+  for (const id of ids) {
+    const v = a[id].verdict ? a[id].verdict.toUpperCase() : "COMMENT";
+    lines.push("### " + id + " — " + v);
+    if (a[id].comment) lines.push("", a[id].comment);
+    lines.push("");
+  }
+  lines.push("<details><summary>Machine-readable review</summary>", "",
+    "```json", JSON.stringify(reviewPayload(d), null, 2), "```", "", "</details>");
+  return lines.join("\n");
+}
+
 fetch("../requirements/REQ-2026-001.json")
   .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
   .then(render)
@@ -117,6 +203,7 @@ fetch("../requirements/REQ-2026-001.json")
   });
 
 function render(d) {
+  storeKey = "kst-review-" + d.document_id + "-v" + d.version;
   document.title = d.document_id + " — " + d.title;
   $("#title").textContent = d.title;
   const total = d.categories.reduce((n,c) => n + c.requirements.length, 0);
@@ -143,6 +230,7 @@ function render(d) {
       el("div", "aux")
     );
     box.lastChild.append(el("b", null, "Disposition: "), el("span", null, q.disposition));
+    annotate(box, q.id);
     oq.append(box);
   }
 
@@ -160,6 +248,7 @@ function render(d) {
       ev.append(el("b", null, "Evidence: "), el("span", null, a.evidence));
       box.append(ev);
     }
+    annotate(box, a.id);
     as.append(box);
   }
 
@@ -193,6 +282,7 @@ function render(d) {
           card.append(aux);
         }
       }
+      annotate(card, r.id);
       det.append(card);
     }
     cats.append(det);
@@ -210,6 +300,7 @@ function render(d) {
       aux.append(el("b", null, label + ": "), el("span", null, v[key]));
       box.append(aux);
     }
+    annotate(box, v.id);
     vc.append(box);
   }
 
@@ -230,6 +321,10 @@ function render(d) {
   st.append(wrap);
 
   // Filtering
+  updateAnnotCount = () => {
+    const n = Object.keys(loadAnnots()).length;
+    $("#ghissue").textContent = "⬆ File review as GitHub issue" + (n ? " (" + n + ")" : "");
+  };
   const apply = () => {
     let shown = 0;
     for (const card of cats.querySelectorAll(".req")) {
@@ -239,7 +334,35 @@ function render(d) {
       if (ok) shown++;
     }
     $("#count").textContent = shown + " / " + total + " shown";
+    updateAnnotCount();
   };
+
+  // Review export: lossless file download
+  $("#export").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(reviewPayload(d), null, 2)],
+      { type: "application/json" });
+    const a = el("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = d.document_id + "-review.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // Review filing: prefilled GitHub new-issue page (user submits manually)
+  $("#ghissue").addEventListener("click", () => {
+    if (!Object.keys(loadAnnots()).length) { alert("No annotations yet."); return; }
+    const body = reviewMarkdown(d);
+    const url = REPO_ISSUE_URL +
+      "?labels=" + encodeURIComponent("human-prompt") +
+      "&title=" + encodeURIComponent("Requirements review: " + d.document_id + " v" + d.version) +
+      "&body=" + encodeURIComponent(body);
+    if (url.length > 7500) {
+      alert("Review too large for URL prefill (" + url.length + " chars). " +
+            "Use ⬇ Export review file instead and hand the file to the agent.");
+      return;
+    }
+    window.open(url, "_blank");
+  });
   $("#search").addEventListener("input", e => { state.q = e.target.value.toLowerCase(); apply(); });
   for (const b of document.querySelectorAll(".pbtn")) {
     b.addEventListener("click", () => {
