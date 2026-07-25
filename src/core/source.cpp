@@ -8,6 +8,7 @@
 
 #include "kst/http.hpp"
 #include "kst/json.hpp"
+#include "kst/xml.hpp"
 
 namespace kst::source {
 
@@ -179,15 +180,20 @@ class IscAdapter final : public Adapter {
     }
 
     Fetch fetch(const Query& q) const override {
-        // ISC rejects the ISO 8601 'Z' designator that FDSN permits and that
-        // REQ-3.2 requires internally, so it is stripped at the boundary —
+        // QuakeML, NOT the pipe-delimited text format. The text format
+        // silently drops depthType, originUncertainty, and typeCertainty —
+        // precisely the three fields that determine whether an origin is
+        // usable for attribution (evidence: issue #23, DM-2026-007).
+        //
+        // ISC also rejects the ISO 8601 'Z' designator that FDSN permits and
+        // REQ-3.2 requires internally, so it is stripped at this boundary;
         // the value is still UTC, only the spelling differs.
         auto drop_z = [](std::string t) {
             if (!t.empty() && (t.back() == 'Z' || t.back() == 'z')) t.pop_back();
             return t;
         };
         std::string url =
-            "https://www.isc.ac.uk/fdsnws/event/1/query?format=text"
+            "https://www.isc.ac.uk/fdsnws/event/1/query?format=xml"
             "&starttime=" + url_encode(drop_z(q.start_time)) +
             "&endtime=" + url_encode(drop_z(q.end_time)) +
             "&minlatitude=" + num(q.min_latitude) +
@@ -199,77 +205,100 @@ class IscAdapter final : public Adapter {
         return f;
     }
 
-    // #EventID|Time|Latitude|Longitude|Depth/km|Author|Catalog|Contributor|
-    // ContributorID|MagType|Magnitude|MagAuthor|EventLocationName|EventType
     std::vector<Observation> parse(std::string_view body,
                                    std::string* error) const override {
         std::vector<Observation> out;
-        std::size_t start = 0;
-        bool any_row = false;
-        while (start < body.size()) {
-            std::size_t nl = body.find('\n', start);
-            if (nl == std::string_view::npos) nl = body.size();
-            std::string_view line = body.substr(start, nl - start);
-            start = nl + 1;
-            if (line.empty() || line.front() == '#') continue;
+        auto doc = xml::parse(body);
+        if (!doc) {
+            if (error) *error = "ISC QuakeML parse failed: " + doc.error->message;
+            return out;
+        }
+        const xml::Element* params = doc->find("eventParameters");
+        if (!params) {
+            if (error) *error = "ISC QuakeML has no eventParameters";
+            return out;
+        }
+        for (const xml::Element* ev : params->children_named("event")) {
+            const xml::Element* origin = ev->child("origin");
+            if (!origin) continue;
 
-            std::vector<std::string_view> f;
-            std::size_t p = 0;
-            while (p <= line.size()) {
-                std::size_t bar = line.find('|', p);
-                if (bar == std::string_view::npos) {
-                    f.push_back(line.substr(p));
-                    break;
-                }
-                f.push_back(line.substr(p, bar - p));
-                p = bar + 1;
+            Observation o;
+            o.source_id = id();
+            o.source_class = source_class();
+            if (const std::string* pid = ev->attribute("publicID")) {
+                o.native_id = *pid;
             }
-            if (f.size() < 13) continue;
-            any_row = true;
+            if (o.native_id.empty()) continue;
+            o.observation_uid = model::observation_uid(o.source_id, o.native_id);
 
-            auto trim = [](std::string_view s) {
-                while (!s.empty() && (s.front() == ' ' || s.front() == '\r'))
-                    s.remove_prefix(1);
-                while (!s.empty() && (s.back() == ' ' || s.back() == '\r'))
-                    s.remove_suffix(1);
-                return s;
-            };
-            auto to_d = [&](std::string_view s) -> std::optional<double> {
-                s = trim(s);
-                if (s.empty()) return std::nullopt;
+            // QuakeML wraps scalars in a <value> child: <time><value>…
+            const xml::Element* time_el = origin->child("time");
+            std::string ts = time_el ? time_el->text_of("value") : std::string();
+            if (!ts.empty() && ts.back() != 'Z') ts += "Z";
+            if (!model::parse_iso8601_ms(ts)) continue;  // REQ-3.7
+            o.origin_time = ts;
+
+            auto num_of = [](const xml::Element* e,
+                             std::string_view k) -> std::optional<double> {
+                if (!e) return std::nullopt;
+                const xml::Element* c = e->find(k);
+                if (!c) return std::nullopt;
+                const std::string t = c->find("value") ? c->text_of("value") : c->text;
+                if (t.empty()) return std::nullopt;
                 try {
-                    return std::stod(std::string(s));
+                    return std::stod(t);
                 } catch (...) {
                     return std::nullopt;
                 }
             };
 
-            Observation o;
-            o.source_id = id();
-            o.source_class = source_class();
-            o.native_id = std::string(trim(f[0]));
-            if (o.native_id.empty()) continue;
-            o.observation_uid = model::observation_uid(o.source_id, o.native_id);
-
-            std::string ts(trim(f[1]));
-            if (!ts.empty() && ts.back() != 'Z') ts += "Z";  // ISC omits it
-            if (!model::parse_iso8601_ms(ts)) continue;      // REQ-3.7
-            o.origin_time = ts;
-
-            if (auto v = to_d(f[2]); v && model::latitude_valid(*v)) o.latitude = *v;
-            if (auto v = to_d(f[3])) o.longitude = model::normalise_longitude(*v);
-            if (auto v = to_d(f[4])) {
-                o.depth_km = *v;
-                o.depth_is_fixed = looks_like_fixed_depth(*v);
+            if (auto v = num_of(origin, "latitude");
+                v && model::latitude_valid(*v)) {
+                o.latitude = *v;
             }
-            o.author = std::string(trim(f[5]));
-            o.magnitude_type = std::string(trim(f[9]));
-            if (auto v = to_d(f[10])) o.magnitude = *v;
-            o.description = std::string(trim(f[12]));
-            if (f.size() >= 14) o.reported_event_type = std::string(trim(f[13]));
+            if (auto v = num_of(origin, "longitude")) {
+                o.longitude = model::normalise_longitude(*v);
+            }
+            // QuakeML publishes depth in METRES.
+            if (auto v = num_of(origin, "depth")) o.depth_km = *v / 1000.0;
+
+            // The authoritative answer to OQ-09: depthType distinguishes a
+            // solved depth ("from location", "constrained by depth phases")
+            // from one an operator or default supplied. No value-guessing.
+            const std::string dtype = origin->text_of("depthType");
+            o.depth_is_fixed = (dtype == "operator assigned" ||
+                                dtype == "constrained by prior knowledge" ||
+                                dtype == "other");
+            o.depth_type = dtype;
+
+            // Location uncertainty, metres to kilometres. The ellipse
+            // semi-major axis is the honest figure: it is the worst case
+            // (REQ-7.5, REQ-8.7).
+            if (const xml::Element* unc = origin->child("originUncertainty")) {
+                if (auto v = num_of(unc, "maxHorizontalUncertainty")) {
+                    o.location_uncertainty_km = *v / 1000.0;
+                } else if (auto h = num_of(unc, "horizontalUncertainty")) {
+                    o.location_uncertainty_km = *h / 1000.0;
+                }
+            }
+
+            if (const xml::Element* ci = origin->child("creationInfo")) {
+                o.author = ci->text_of("author");
+            }
+            if (const xml::Element* mag = ev->child("magnitude")) {
+                if (auto v = num_of(mag, "mag")) o.magnitude = *v;
+                o.magnitude_type = mag->text_of("type");
+            }
+            if (const xml::Element* desc = ev->child("description")) {
+                o.description = desc->text_of("text");
+            }
+            o.reported_event_type = ev->text_of("type");
+            // ISC's own confidence in the event type — 'suspected' vs
+            // 'known'. Retained as published (REQ-3.6).
+            o.type_certainty = ev->text_of("typeCertainty");
             out.push_back(std::move(o));
         }
-        if (!any_row && error) *error = "ISC response contained no data rows";
+        if (out.empty() && error) *error = "ISC response contained no events";
         return out;
     }
 };

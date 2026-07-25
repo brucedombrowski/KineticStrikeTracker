@@ -33,18 +33,20 @@ std::string Confidence::occurrence_band() const {
 }
 
 std::string Confidence::location_band() const {
-    if (best_location_uncertainty_km < 0.0) {
-        return instrumental_sources > 0 ? "moderate" : "low";
-    }
+    // An unpublished uncertainty is not a small one. Reporting "moderate"
+    // for an origin whose ellipse is hundreds of kilometres across would be
+    // the single most misleading thing this system could say (REQ-7.5).
+    if (best_location_uncertainty_km < 0.0) return "unknown";
     if (best_location_uncertainty_km <= 5.0) return "high";
     if (best_location_uncertainty_km <= 30.0) return "moderate";
-    return "low";
+    if (best_location_uncertainty_km <= 100.0) return "low";
+    return "unusable";  // beyond this, no site-level attribution is possible
 }
 
 std::string Confidence::characterisation_band() const {
     // Characterisation is the weakest axis by construction: catalog
     // parameters alone rarely settle source type (REQ-5.7).
-    if (has_disconfirming_evidence) return "low";
+    if (has_disconfirming_evidence || any_source_type_suspected) return "low";
     if (instrumental_sources >= 2 && independent_sources >= 3) return "moderate";
     if (instrumental_sources >= 1 && independent_sources >= 2) return "moderate";
     return "low";
@@ -262,6 +264,11 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
             if (o.reported_event_type == "earthquake" &&
                 e.discrimination.classification == Classification::SurfaceExplosion) {
                 e.confidence.has_disconfirming_evidence = true;  // REQ-7.6
+            }
+            // The source's own hedge is evidence about the source's
+            // confidence, and is carried rather than discarded (REQ-7.6).
+            if (o.type_certainty == "suspected") {
+                e.confidence.any_source_type_suspected = true;
             }
         }
         e.confidence.independent_sources = static_cast<int>(distinct_sources.size());

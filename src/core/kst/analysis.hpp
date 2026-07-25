@@ -49,6 +49,7 @@ struct Confidence {
     int reporting_sources = 0;
     bool has_government_source = false;
     bool has_disconfirming_evidence = false;  // REQ-7.6
+    bool any_source_type_suspected = false;  // source's own hedge
     double best_location_uncertainty_km = -1.0;
 
     // Separate axes — they are genuinely independent (REQ-7.5).

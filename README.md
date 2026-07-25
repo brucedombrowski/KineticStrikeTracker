@@ -47,8 +47,10 @@ can be replayed offline against a stored snapshot with no network access.
 
 ## The detection floor — read this before trusting any output
 
-The public global seismic catalog cannot resolve kinetic strikes over Iran. This was measured, not
-assumed.
+Public global seismic catalogs cannot resolve kinetic strikes at munition scale. This was measured,
+not assumed. It is a property of the global network's detection threshold, not of any one region —
+the measurement was taken over Iran because a documented strike campaign there provides ground
+truth.
 
 A query of the USGS FDSN event service covering 2025-06-01 to 2025-07-05 over a box containing
 Fordow, Natanz and Isfahan — spanning the entire June 2025 campaign, **with no minimum magnitude** —
@@ -66,6 +68,12 @@ Two consequences shape the whole design:
    consuming them cannot reach below the threshold at which someone else decided to publish. Picking
    arrivals across stations and inverting for a hypocentre is the only route into the sub-threshold
    regime where most strikes live.
+
+And a third, learned the hard way (issue #23): **a detection is not a location.** The CTBTO IDC
+origins that do sit at strike magnitudes carry horizontal uncertainty ellipses of 150–1000 km,
+operator-assigned depths, and the source's own `suspected` flag. They establish that energy was
+detected and roughly when. They cannot say where. The system reports their location confidence as
+`unusable` rather than implying a precision nobody published.
 
 Consequently: **absence of a detection is not evidence that no strike occurred**, and every report
 the system produces is required to say so.
@@ -97,9 +105,9 @@ Development is open. Planning sessions are archived to the issue tracker as tran
 
 | Source | Class | Role |
 |---|---|---|
-| USGS FDSN event service | A — instrumental | Global catalog; regional coverage insufficient (see above) |
+| USGS FDSN event service | A — instrumental | Global catalog; completeness far above strike magnitudes (see above) |
 | EMSC SeismicPortal | A — instrumental | Independent European-Mediterranean catalog |
-| ISC bulletin (aggregates CTBTO IDC, NEIC, regional agencies) | A — instrumental | The catalog route that reaches strike magnitudes: 13 IDC surface-event detections on June 2025 strike nights (direct IRSC excluded — no-redistribution licence) |
+| ISC bulletin (aggregates CTBTO IDC, NEIC, regional agencies) | A — instrumental | Reaches strike magnitudes, but IDC origins carry 150–1000 km uncertainty — temporal signal, not positional. Read as QuakeML, never the text format (REQ-2.19). Direct IRSC excluded — no-redistribution licence |
 | NASA FIRMS (VIIRS / MODIS) | A — instrumental | Space-based thermal anomaly detections; sees fire-producing strikes with no seismic signal |
 | USCENTCOM public releases | B — government | Official statements |
 | ACLED | C — curated dataset | Human-coded conflict events with published methodology |

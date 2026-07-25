@@ -8,6 +8,7 @@ add_library(kst_core STATIC
     pipeline.cpp
     observation.cpp
     source.cpp
+    xml.cpp
     http.cpp
     json.cpp
     version.cpp

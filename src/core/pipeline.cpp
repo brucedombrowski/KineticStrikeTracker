@@ -115,8 +115,9 @@ IngestReport ingest(db::Database& database,
                 "INSERT INTO observation(observation_uid,source_id,source_class,"
                 "native_id,origin_time,latitude,longitude,depth_km,"
                 "depth_is_fixed,magnitude,magnitude_type,reported_event_type,"
-                "description,is_curated) "
-                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
+                "description,is_curated,location_uncertainty_km,depth_type,"
+                "type_certainty) "
+                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
                 "ON CONFLICT(source_id,native_id) DO UPDATE SET "
                 "origin_time=excluded.origin_time,latitude=excluded.latitude,"
                 "longitude=excluded.longitude,depth_km=excluded.depth_km,"
@@ -124,7 +125,10 @@ IngestReport ingest(db::Database& database,
                 "magnitude=excluded.magnitude,"
                 "magnitude_type=excluded.magnitude_type,"
                 "reported_event_type=excluded.reported_event_type,"
-                "description=excluded.description");
+                "description=excluded.description,"
+                "location_uncertainty_km=excluded.location_uncertainty_km,"
+                "depth_type=excluded.depth_type,"
+                "type_certainty=excluded.type_certainty");
             if (!up) continue;
             up->bind(1, o.observation_uid)
                 .bind(2, o.source_id)
@@ -140,6 +144,9 @@ IngestReport ingest(db::Database& database,
                 .bind(12, o.reported_event_type)
                 .bind(13, o.description)
                 .bind(14, static_cast<std::int64_t>(o.is_curated ? 1 : 0));
+            o.location_uncertainty_km ? up->bind(15, *o.location_uncertainty_km)
+                                      : up->bind_null(15);
+            up->bind(16, o.depth_type).bind(17, o.type_certainty);
             if (up->execute()) ++sr.observations;
         }
         report.total_observations += sr.observations;
@@ -153,7 +160,8 @@ std::vector<model::Observation> load_observations(db::Database& database) {
     auto q = database.prepare(
         "SELECT observation_uid,source_id,source_class,native_id,origin_time,"
         "latitude,longitude,depth_km,depth_is_fixed,magnitude,magnitude_type,"
-        "reported_event_type,description,is_curated FROM observation "
+        "reported_event_type,description,is_curated,"
+        "location_uncertainty_km,depth_type,type_certainty FROM observation "
         "ORDER BY origin_time, observation_uid");  // canonical (REQ-6.3)
     if (!q) return out;
     while (q->step()) {
@@ -174,6 +182,9 @@ std::vector<model::Observation> load_observations(db::Database& database) {
         o.reported_event_type = q->column_text(11);
         o.description = q->column_text(12);
         o.is_curated = q->column_int(13) != 0;
+        if (!q->column_is_null(14)) o.location_uncertainty_km = q->column_double(14);
+        o.depth_type = q->column_text(15);
+        o.type_certainty = q->column_text(16);
         out.push_back(std::move(o));
     }
     return out;
@@ -305,9 +316,18 @@ std::string to_report(const std::vector<analysis::Event>& events,
                 o << "  M" << fixed(*c.magnitude, 1) << " " << c.magnitude_type;
             }
             if (c.depth_km) {
-                o << "  depth " << fixed(*c.depth_km, 1) << " km"
-                  << (c.depth_is_fixed ? " (agency default)" : " (constrained)");
+                o << "  depth " << fixed(*c.depth_km, 1) << " km";
+                if (!c.depth_type.empty()) {
+                    o << " [" << terminal_safe(c.depth_type) << "]";
+                } else {
+                    o << (c.depth_is_fixed ? " (agency default)" : " (constrained)");
+                }
             }
+            if (c.location_uncertainty_km) {
+                o << "  location +/-" << fixed(*c.location_uncertainty_km, 0)
+                  << " km";
+            }
+            if (c.type_certainty == "suspected") o << "  [type: suspected]";
             if (!c.author.empty()) o << "  author=" << terminal_safe(c.author);
             if (!c.description.empty()) {
                 o << "\n      " << terminal_safe(c.description);

@@ -31,18 +31,18 @@ constexpr const char* kUsage =
     "\n"
     "options:\n"
     "  --db PATH          database file (default: data/kst.db)\n"
-    "  --start TIME       ISO 8601 UTC start (default: 2025-06-13T00:00:00Z)\n"
-    "  --end TIME         ISO 8601 UTC end   (default: 2025-06-26T00:00:00Z)\n"
-    "  --bbox S,N,W,E     region of interest (default: 31.5,36.5,49,53.5)\n"
+    "  --start TIME       ISO 8601 UTC start\n"
+    "  --end TIME         ISO 8601 UTC end\n"
+    "  --bbox S,N,W,E     region of interest, anywhere on Earth\n"
     "  --file PATH        additional local file source (repeatable)\n"
     "  --seed PATH        curated seed dataset file (repeatable)\n"
     "  --out DIR          output directory for report/geojson (default: out)\n"
     "  --offline          skip network sources\n"
     "  --version, --help\n"
     "\n"
-    "Defaults describe the June 2025 Iran window used as validation case\n"
-    "VC-01/VC-04 — running `kst ingest` then `kst report` with no options\n"
-    "reproduces the project's reference result.\n";
+    "Scope is Earth; --bbox takes any region. Defaults reproduce validation\n"
+    "cases VC-01/VC-02/VC-04 (June 2025 Iran) because a documented campaign\n"
+    "there gives ground truth — they are a demo default, not a boundary.\n";
 
 struct Options {
     std::string db_path = "data/kst.db";

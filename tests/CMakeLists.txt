@@ -25,3 +25,10 @@ add_executable(test_db test_db.cpp)
 target_link_libraries(test_db PRIVATE kst_core)
 target_include_directories(test_db PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 add_test(NAME db COMMAND test_db)
+
+add_executable(test_xml test_xml.cpp)
+target_link_libraries(test_xml PRIVATE kst_core)
+target_include_directories(test_xml PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(test_xml PRIVATE
+    KST_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+add_test(NAME xml COMMAND test_xml)

@@ -7,6 +7,32 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+- **The ISC adapter was reading a lossy format** (issue #23). The FDSN pipe-delimited text
+  format omits `depthType`, `originUncertainty`, and `typeCertainty`; every omission pointed
+  toward more confidence than the data supports. Adapter now reads QuakeML (REQ-2.19).
+- **Location confidence reported `moderate` for origins uncertain to ±850 km.** Published
+  uncertainty now drives the location axis; unpublished uncertainty reports `unknown`, never
+  small; uncertainty too large to separate candidate sites reports `unusable` (REQ-7.8).
+- **Depth discriminant guessed provenance from the value.** It now reads `depthType` from the
+  source and records when it declines and why (REQ-5.2 strengthened).
+
+### Changed
+- **ASM-08 and VC-04 corrected.** Both were written from the lossy text format and overstated
+  what the record supports — the claim that IDC-via-ISC is "the highest-value single feed" does
+  not survive the QuakeML evidence. Corrected in place with the refuting evidence committed,
+  not quietly edited (DM-2026-007).
+- **Scope language scrubbed** (issue #21): the region of interest is Earth. Iran and June 2025
+  appear only as validation cases and as a CLI demo default, never as a scope boundary —
+  requirements, README, CLAUDE.md, and CLI help all updated.
+
+### Added
+- `kst::xml` — bounded read-only XML parser. Refuses DOCTYPE and all entity declarations
+  outright (billion-laughs and XXE vectors), honours only the five predefined entities and
+  numeric character references, bounded depth/size/name/text/children (REQ-12.3, REQ-12.9).
+- `requirements/evidence/isc-iran-jun2025-quakeml.xml` — the QuakeML record behind DM-2026-007.
+- Schema v2: `depth_type` and `type_certainty` columns.
+
 ### Changed
 - REQ-2026-001 v0.3.1: `open_questions` now holds ONLY unresolved items so the count is
   meaningful and drivable to zero (currently **0**); the seven answered questions move to

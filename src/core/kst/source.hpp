@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "kst/observation.hpp"
+#include "kst/xml.hpp"
 
 namespace kst::source {
 

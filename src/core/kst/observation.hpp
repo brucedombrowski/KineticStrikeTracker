@@ -40,7 +40,14 @@ struct Observation {
     std::string magnitude_type;       // native, never converted (REQ-3.4)
     std::optional<double> location_uncertainty_km;
 
+    // Depth provenance, as published. QuakeML depthType distinguishes a
+    // solved depth from an operator-assigned or default one — the field that
+    // answers OQ-09 (DM-2026-007). Empty when the source does not say.
+    std::string depth_type;
+
     std::string reported_event_type;  // as published
+    // Source's own certainty in the event type ("known" / "suspected").
+    std::string type_certainty;
     std::string description;
     std::string author;               // contributing agency where known
     bool is_curated = false;          // hand-entered seed data (REQ-2.18)

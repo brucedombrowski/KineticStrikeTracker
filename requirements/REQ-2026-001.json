@@ -2,7 +2,7 @@
   "document_id": "REQ-2026-001",
   "title": "Kinetic Strike Tracker — Requirements Specification",
   "project": "KineticStrikeTracker",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "status": "draft-pending-human-review",
   "date": "2026-07-25",
   "author": "AI agent (Claude), drafted for human review",
@@ -106,8 +106,8 @@
   "assumptions": [
     {
       "id": "ASM-01",
-      "text": "The USGS global catalog cannot resolve kinetic strikes over the region of interest. This was measured, not assumed: a query of the USGS FDSN event service for 2025-06-01 to 2025-07-05 over the box 31.5-36.5 N, 49.0-53.5 E — containing Fordow, Natanz and Isfahan, and spanning the entire June 2025 campaign — with NO minimum magnitude returned exactly two events, neither at any struck site. The 2025-06-22 strike on Fordow produced no catalogued USGS event whatsoever. A broader query over 25-40 N, 44-64 E returned nothing below M4.1.",
-      "consequence": "Magnitude of completeness for USGS over Iran is approximately M4.0. Munition-scale events couple at roughly M2.0-M2.5 — two to three orders of magnitude in energy below that floor. Global-catalog sources alone are therefore insufficient, and REQ-2.4 (regional networks) is mandatory rather than recommended.",
+      "text": "Global seismic catalogs cannot resolve kinetic strikes at munition scale anywhere. This was measured over Iran because that is where a known strike campaign provides ground truth; the limitation is a property of the global network's detection threshold, not of that region. This was measured, not assumed: a query of the USGS FDSN event service for 2025-06-01 to 2025-07-05 over the box 31.5-36.5 N, 49.0-53.5 E — containing Fordow, Natanz and Isfahan, and spanning the entire June 2025 campaign — with NO minimum magnitude returned exactly two events, neither at any struck site. The 2025-06-22 strike on Fordow produced no catalogued USGS event whatsoever. A broader query over 25-40 N, 44-64 E returned nothing below M4.1.",
+      "consequence": "Magnitude of completeness for USGS over Iran measured approximately M4.0, and comparable figures apply across sparsely instrumented regions worldwide. Munition-scale events couple at roughly M2.0-M2.5 — two to three orders of magnitude in energy below that floor. Global-catalog sources alone are therefore insufficient, and REQ-2.4 (regional networks) is mandatory rather than recommended.",
       "evidence": "requirements/evidence/usgs-iran-jun2025.json"
     },
     {
@@ -118,11 +118,11 @@
     {
       "id": "ASM-02",
       "text": "Magnitude of completeness (Mc) for the Iranian Seismological Center catalog is spatially and temporally heterogeneous, and roughly 19% of catalog entries are reported in the literature to be non-tectonic (quarry and mine blasts).",
-      "consequence": "Anthropogenic-source contamination is expected and is a discrimination problem the system must address explicitly, not an anomaly."
+      "consequence": "Anthropogenic-source contamination is expected in any regional catalog and is a discrimination problem the system must address explicitly, not an anomaly."
     },
     {
       "id": "ASM-03",
-      "text": "Iran is tectonically active. Natural seismicity is the dominant signal in the region of interest and constitutes the primary false-positive source.",
+      "text": "Many regions of interest are tectonically active, Iran conspicuously so. Natural seismicity is the dominant signal in such regions and constitutes the primary false-positive source.",
       "consequence": "Discrimination and confidence scoring are core functions, not enhancements."
     },
     {
@@ -147,9 +147,9 @@
     },
     {
       "id": "ASM-08",
-      "text": "The CTBTO International Data Centre (IDC) detects and locates surface-level explosive events in the region of interest at munition scale, and its Reviewed Event Bulletin reaches the public record via the ISC. Measured: for 2025-06-13 to 2025-06-25 over the Fordow/Natanz/Isfahan box, ISC returns thirteen IDC origins, all at depth 0.0 km, temporally clustered on the strike-campaign nights — alongside exactly two natural events (NEIC MW 5.0 at 10 km; ISN ML 3.1 at 22.3 km) whose depths differ decisively.",
-      "consequence": "The system's primary discriminant pattern (surface depth + instrumental detection + temporal clustering) is empirically present in public data. IDC-contributed origins via ISC are the highest-value single feed for the mission.",
-      "evidence": "requirements/evidence/isc-iran-jun2025.txt"
+      "text": "CORRECTED 2026-07-25 (issue #23). The earlier form of this assumption was drawn from the FDSN pipe-delimited text format, which silently omits depthType, originUncertainty, and typeCertainty. The QuakeML record shows: all 13 IDC origins over the June 2025 window carry depthType 'operator assigned' with no published depth uncertainty; horizontal uncertainty ellipses range from 146x312 km to 265x1011 km; and every one is flagged typeCertainty 'suspected' with no magnitude. By contrast NEIC's Semnan origin has a 10x14 km ellipse and typeCertainty 'known', and ISN's has 6x10 km with a freely determined 22.3 km depth.",
+      "consequence": "IDC-contributed origins establish that energy was detected and roughly when, but their locations cannot support site-level attribution — an ellipse approaching 1000 km spans much of a country — and their depths are not measurements. They are a temporal signal, not a positional one. Consequently: adapters SHALL prefer formats that publish provenance (REQ-2.19), location uncertainty SHALL drive the location confidence axis (REQ-7.8), and independent triangulation (REQ-5.8/5.9) is the only route to site-level attribution.",
+      "evidence": "requirements/evidence/isc-iran-jun2025-quakeml.xml"
     }
   ],
   "categories": [
@@ -161,10 +161,10 @@
           "id": "REQ-1.1",
           "standard": "IEEE 29148-2018",
           "section": "9.6.2 (Purpose)",
-          "text": "The system SHALL correlate objective, publicly available geophysical observations with open-source reporting to identify and characterise candidate kinetic strike events. The data model SHALL be whole-Earth: any analysis is scoped by a configurable geographic region of interest, with Iran and surrounding areas as the initial default, and nothing in the data model SHALL restrict the system to any particular region.",
+          "text": "The system SHALL correlate objective, publicly available geophysical observations with open-source reporting to identify and characterise candidate kinetic strike events anywhere on Earth. The data model SHALL be whole-Earth; each analysis is scoped by a configurable region of interest supplied at run time, and nothing in the data model, schema, or analysis SHALL privilege any particular region.",
           "priority": "mandatory",
           "verification": "demonstration",
-          "notes": "Amended per review issue #2 (OQ-03): kinetic events of interest are not limited to one region or one cause — industrial explosions, munition impacts, and other surface events register the same way. The Earth is modelled globally; coverage determines what is analysable (REQ-8.8)."
+          "notes": "Amended per review issue #2 (OQ-03) and issue #21. Scope is Earth. Iran and the June 2025 campaign appear only as validation cases (VC-01, VC-02, VC-04) because a documented strike campaign provides ground truth, and as the CLI's default window for reproducing those cases — not as a scope boundary."
         },
         {
           "id": "REQ-1.6",
@@ -370,6 +370,15 @@
           "priority": "recommended",
           "verification": "test",
           "rationale": "Seismic origins are routinely revised after initial automatic publication. Silently overwriting would destroy the audit trail; ignoring revisions would retain known-superseded values."
+        },
+        {
+          "id": "REQ-2.19",
+          "standard": "QuakeML 1.2",
+          "section": "Origin, OriginUncertainty",
+          "text": "Where a source offers multiple response formats, the adapter SHALL use the format that carries the most complete provenance — specifically depth determination type, origin uncertainty, and event type certainty — even at the cost of a more complex parser.",
+          "priority": "mandatory",
+          "verification": "inspection",
+          "rationale": "Issue #23: the FDSN text format omits depthType, originUncertainty and typeCertainty. Consuming it produced an assessment that looked confident and was not. A format that hides the quality of a measurement is not a cheaper version of one that does not; it is a different and worse input."
         }
       ]
     },
@@ -510,10 +519,10 @@
           "id": "REQ-5.2",
           "standard": "Seismic discrimination literature",
           "section": "Depth discriminant",
-          "text": "The system SHALL apply reported focal depth as a discriminant, treating very shallow or fixed-at-zero depths as consistent with a surface or near-surface source, while accounting for the fact that poorly constrained depths are frequently reported as fixed values.",
+          "text": "The system SHALL apply reported focal depth as a discriminant ONLY where the source declares the depth was determined from the data. Where the source declares the depth operator-assigned, default, or otherwise not solved — or declares nothing — the system SHALL NOT apply the depth discriminant, and SHALL record that it declined and why.",
           "priority": "mandatory",
           "verification": "analysis",
-          "rationale": "A depth fixed at 0 or 10 km by the locating agency is a processing artefact, not a measurement; treating it as evidence of a surface source would be a systematic false-positive generator."
+          "rationale": "Strengthened per issue #23. QuakeML depthType answers this authoritatively, replacing the earlier heuristic of guessing from the value itself. Measured: all 13 IDC origins in the June 2025 window are 'operator assigned' at depth 0.0 — under the old value-guessing heuristic a plausible reading would have classified every one as a surface explosion, over a tectonically active region (ASM-03)."
         },
         {
           "id": "REQ-5.3",
@@ -718,6 +727,15 @@
           "text": "The system SHALL record disconfirming evidence, including sources that reported no event or that attributed the event to a natural cause, and SHALL reflect such evidence in the confidence assessment.",
           "priority": "mandatory",
           "verification": "test"
+        },
+        {
+          "id": "REQ-7.8",
+          "standard": "QuakeML 1.2",
+          "section": "OriginUncertainty",
+          "text": "Published location uncertainty SHALL drive the location confidence axis. Where uncertainty is not published, the system SHALL report location confidence as unknown, and SHALL NOT treat an unpublished uncertainty as a small one. Where the uncertainty is too large to distinguish candidate sites, the system SHALL report the location as unusable for attribution.",
+          "priority": "mandatory",
+          "verification": "test",
+          "rationale": "Issue #23 exposed the system reporting 'moderate' location confidence for origins uncertain to +/-850 km. Silence about uncertainty is not evidence of precision."
         }
       ]
     },
@@ -1204,10 +1222,10 @@
     },
     {
       "id": "VC-04",
-      "name": "IDC surface-event cluster, June 2025 campaign",
-      "description": "Thirteen IDC (CTBTO) origins at depth 0.0 km over central/western Iran between 2025-06-13 and 2025-06-22, clustered on strike nights (e.g. three on the opening night of 13 June within 38 minutes), retrieved via the ISC FDSN service. Same window and box contain two natural earthquakes at 10 km and 22.3 km depth.",
-      "tests": "REQ-2.4 (ISC ingestion), REQ-5.1/5.2 (classification and depth discriminant), REQ-6.5 (cross-catalog dedup where NEIC and IDC report the same event), REQ-7.5 (occurrence vs characterisation confidence).",
-      "expected_behaviour": "The system flags the depth-0.0 IDC cluster as candidate surface events distinct from the two natural earthquakes, without asserting attribution beyond what the data supports: location uncertainties of tens of km mean site-level attribution requires corroborating sources."
+      "name": "IDC detections, June 2025 — usable in time, unusable in position",
+      "description": "Thirteen IDC (CTBTO) origins over central/western Iran, 2025-06-13 to 2025-06-22, clustered on strike nights. QuakeML shows all carry depthType 'operator assigned', typeCertainty 'suspected', no magnitude, and horizontal uncertainty ellipses of 146x312 km to 265x1011 km. Same window contains NEIC's Semnan origin (10x14 km, 'known') and an ISN origin (6x10 km, freely determined 22.3 km depth).",
+      "tests": "REQ-2.19 (provenance-carrying formats), REQ-5.2 (depthType governs the depth discriminant), REQ-7.8 (uncertainty drives location confidence), REQ-8.7 (observed vs derived).",
+      "expected_behaviour": "The system reports location confidence 'unusable' for the IDC origins, declines the depth discriminant because depthType says the depth was assigned rather than solved, and surfaces the source's own 'suspected' hedge. It does NOT attribute any of them to a named facility."
     }
   ]
 }

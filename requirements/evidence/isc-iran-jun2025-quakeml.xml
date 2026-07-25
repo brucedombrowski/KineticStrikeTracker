@@ -1,0 +1,782 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<q:quakeml xmlns:q="http://quakeml.org/xmlns/quakeml/1.2" xmlns="http://quakeml.org/xmlns/bed/1.2">
+  <eventParameters publicID="smi:ISC/bulletin">
+    <creationInfo>
+      <agencyID>ISC</agencyID>
+      <creationTime>2026-07-25T21:48:53</creationTime>
+    </creationInfo>
+    <description>ISC Bulletin</description>
+    <comment>
+      <text>Data on or after 2024/07/01 have not been reviewed by the ISC.ISS station arrival data for years 1960 to 1963 have been provided by Antonio VillaseÃ±or. (Antonio VillaseÃ±or and E. Robert Engdahl, Systematic Relocation of Early Instrumental Seismicity: Earthquakes in the International Seismological Summary for 1960â1963, Bull. Seism. Soc Am., 97, 1820â1832, 2007). </text>
+    </comment>
+    <event publicID="smi:ISC/evid=644515656">
+      <preferredOriginID>smi:ISC/origid=638727232</preferredOriginID>
+      <description>
+        <text>Western Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638727232">
+        <time>
+          <value>2025-06-13T17:42:09.24Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>33.6454</value>
+        </latitude>
+        <longitude>
+          <value>49.6766</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>59.4500</standardError>
+          <azimuthalGap>302.000</azimuthalGap>
+          <minimumDistance>24.610</minimumDistance>
+          <maximumDistance>33.080</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>245000</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>851700.012207031</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>138.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515658">
+      <preferredOriginID>smi:ISC/origid=638727234</preferredOriginID>
+      <description>
+        <text>Western Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638727234">
+        <time>
+          <value>2025-06-13T18:14:24.01Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>34.6113</value>
+        </latitude>
+        <longitude>
+          <value>49.8837</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>12.5900</standardError>
+          <azimuthalGap>301.000</azimuthalGap>
+          <minimumDistance>23.740</minimumDistance>
+          <maximumDistance>33.000</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>245899.993896484</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>881799.987792969</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>138.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515659">
+      <preferredOriginID>smi:ISC/origid=638727235</preferredOriginID>
+      <description>
+        <text>Northern and central Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638727235">
+        <time>
+          <value>2025-06-13T18:20:20.09Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>33.9472</value>
+        </latitude>
+        <longitude>
+          <value>50.8960</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>95.3500</standardError>
+          <azimuthalGap>303.000</azimuthalGap>
+          <minimumDistance>24.630</minimumDistance>
+          <maximumDistance>33.980</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>253399.993896484</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>946900.024414062</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>138.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515674">
+      <preferredOriginID>smi:ISC/origid=638727054</preferredOriginID>
+      <description>
+        <text>Northern and central Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638727054">
+        <time>
+          <value>2025-06-14T01:40:58.44Z</value>
+          <uncertainty>530.80</uncertainty>
+        </time>
+        <latitude>
+          <value>32.0668</value>
+        </latitude>
+        <longitude>
+          <value>53.2521</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>125.3000</standardError>
+          <azimuthalGap>226.000</azimuthalGap>
+          <minimumDistance>22.500</minimumDistance>
+          <maximumDistance>36.410</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>147800.003051758</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>321000</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>90.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515676">
+      <preferredOriginID>smi:ISC/origid=638727056</preferredOriginID>
+      <description>
+        <text>Northern and central Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638727056">
+        <time>
+          <value>2025-06-14T01:57:19.61Z</value>
+          <uncertainty>504.90</uncertainty>
+        </time>
+        <latitude>
+          <value>32.6786</value>
+        </latitude>
+        <longitude>
+          <value>52.2689</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>189.6000</standardError>
+          <azimuthalGap>223.000</azimuthalGap>
+          <minimumDistance>22.700</minimumDistance>
+          <maximumDistance>35.430</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>146399.993896484</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>311500</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>88.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515715">
+      <preferredOriginID>smi:ISC/origid=638727135</preferredOriginID>
+      <description>
+        <text>Northern and central Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638727135">
+        <time>
+          <value>2025-06-14T19:46:26.00Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>33.1568</value>
+        </latitude>
+        <longitude>
+          <value>51.3298</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>187.7000</standardError>
+          <azimuthalGap>305.000</azimuthalGap>
+          <minimumDistance>25.490</minimumDistance>
+          <maximumDistance>34.540</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>258500</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>945700.012207031</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>138.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515718">
+      <preferredOriginID>smi:ISC/origid=638727138</preferredOriginID>
+      <description>
+        <text>Northern and central Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638727138">
+        <time>
+          <value>2025-06-14T20:08:39.25Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>32.5753</value>
+        </latitude>
+        <longitude>
+          <value>51.2421</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>76.6400</standardError>
+          <azimuthalGap>305.000</azimuthalGap>
+          <minimumDistance>26.020</minimumDistance>
+          <maximumDistance>34.640</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>259200.012207031</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>924000</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>138.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515726">
+      <preferredOriginID>smi:ISC/origid=638727155</preferredOriginID>
+      <description>
+        <text>Western Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638727155">
+        <time>
+          <value>2025-06-14T23:17:46.84Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>31.7682</value>
+        </latitude>
+        <longitude>
+          <value>49.6753</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>31.7000</standardError>
+          <azimuthalGap>304.000</azimuthalGap>
+          <minimumDistance>26.410</minimumDistance>
+          <maximumDistance>33.610</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>264799.987792969</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>1011000</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>139.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515728">
+      <preferredOriginID>smi:ISC/origid=638727157</preferredOriginID>
+      <description>
+        <text>Western Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638727157">
+        <time>
+          <value>2025-06-14T23:40:49.16Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>33.5838</value>
+        </latitude>
+        <longitude>
+          <value>49.6003</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>128.4000</standardError>
+          <azimuthalGap>302.000</azimuthalGap>
+          <minimumDistance>24.650</minimumDistance>
+          <maximumDistance>33.030</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>246699.996948242</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>852700.012207031</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>138.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515729">
+      <preferredOriginID>smi:ISC/origid=638727158</preferredOriginID>
+      <description>
+        <text>Northern and central Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638727158">
+        <time>
+          <value>2025-06-14T23:51:44.16Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>33.9341</value>
+        </latitude>
+        <longitude>
+          <value>50.5881</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>4</usedPhaseCount>
+          <standardError>207.2000</standardError>
+          <azimuthalGap>269.000</azimuthalGap>
+          <minimumDistance>17.350</minimumDistance>
+          <maximumDistance>33.730</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>212800.003051758</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>507200.012207031</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>149.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515771">
+      <preferredOriginID>smi:ISC/origid=638729742</preferredOriginID>
+      <description>
+        <text>Western Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638729742">
+        <time>
+          <value>2025-06-16T00:57:03.98Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>34.3783</value>
+        </latitude>
+        <longitude>
+          <value>49.0258</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>198.2000</standardError>
+          <azimuthalGap>300.000</azimuthalGap>
+          <minimumDistance>23.760</minimumDistance>
+          <maximumDistance>32.370</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>240399.993896484</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>861500</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>137.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=644515878">
+      <preferredOriginID>smi:ISC/origid=638730114</preferredOriginID>
+      <description>
+        <text>Northern and central Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638730114">
+        <time>
+          <value>2025-06-17T21:57:28.43Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>34.9997</value>
+        </latitude>
+        <longitude>
+          <value>52.0554</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>222.2000</standardError>
+          <azimuthalGap>294.000</azimuthalGap>
+          <minimumDistance>16.000</minimumDistance>
+          <maximumDistance>31.350</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>261500</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>660400.024414062</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>164.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=643546319">
+      <preferredOriginID>smi:ISC/origid=638416976</preferredOriginID>
+      <description>
+        <text>Northern and central Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>known</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638416976">
+        <time>
+          <value>2025-06-20T17:49:14.62Z</value>
+          <uncertainty>1.27</uncertainty>
+        </time>
+        <latitude>
+          <value>35.3963</value>
+        </latitude>
+        <longitude>
+          <value>53.0254</value>
+        </longitude>
+        <depth>
+          <value>10000.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>161</usedPhaseCount>
+          <associatedStationCount>319</associatedStationCount>
+          <standardError>0.6300</standardError>
+          <azimuthalGap>43.000</azimuthalGap>
+          <minimumDistance>4.810</minimumDistance>
+        </quality>
+        <creationInfo>
+          <author>NEIC</author>
+          <agencyID>NEIC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>10204.0004730225</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>13972.0001220703</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>162.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+      <magnitude publicID="smi:ISC/magid=647085593">
+        <mag>
+          <value>5.10</value>
+          <uncertainty>0.04</uncertainty>
+        </mag>
+        <type>mb</type>
+        <originID>smi:ISC/origid=638416976</originID>
+        <stationCount>249</stationCount>
+        <creationInfo>
+          <author>NEIC</author>
+        </creationInfo>
+      </magnitude>
+      <magnitude publicID="smi:ISC/magid=647085594">
+        <mag>
+          <value>4.90</value>
+          <uncertainty>0.08</uncertainty>
+        </mag>
+        <type>Mww</type>
+        <originID>smi:ISC/origid=638416976</originID>
+        <stationCount>15</stationCount>
+        <creationInfo>
+          <author>NEIC</author>
+        </creationInfo>
+      </magnitude>
+      <preferredMagnitudeID>smi:ISC/magid=647085593</preferredMagnitudeID>
+    </event>
+    <event publicID="smi:ISC/evid=644516070">
+      <preferredOriginID>smi:ISC/origid=638730856</preferredOriginID>
+      <description>
+        <text>Northern and central Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638730856">
+        <time>
+          <value>2025-06-22T04:22:25.97Z</value>
+          <uncertainty>999.00</uncertainty>
+        </time>
+        <latitude>
+          <value>32.4463</value>
+        </latitude>
+        <longitude>
+          <value>50.6806</value>
+        </longitude>
+        <depth>
+          <value>0.0</value>
+        </depth>
+        <depthType>operator assigned</depthType>
+        <quality>
+          <usedPhaseCount>3</usedPhaseCount>
+          <standardError>149.7000</standardError>
+          <azimuthalGap>304.000</azimuthalGap>
+          <minimumDistance>26.000</minimumDistance>
+          <maximumDistance>34.220</maximumDistance>
+        </quality>
+        <creationInfo>
+          <author>IDC</author>
+          <agencyID>IDC</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>uncertainty ellipse</preferredDescription>
+          <minHorizontalUncertainty>264600.006103516</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>996099.975585938</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>139.0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+    </event>
+    <event publicID="smi:ISC/evid=643919539">
+      <preferredOriginID>smi:ISC/origid=638344874</preferredOriginID>
+      <description>
+        <text>Western Iran</text>
+        <type>Flinn-Engdahl region</type>
+      </description>
+      <type>earthquake</type>
+      <typeCertainty>suspected</typeCertainty>
+      <comment>
+        <text>Event not reviewed by the ISC</text>
+      </comment>
+      <creationInfo>
+        <agencyID>ISC</agencyID>
+        <author>ISC</author>
+      </creationInfo>
+      <origin publicID="smi:ISC/origid=638344874">
+        <time>
+          <value>2025-06-25T01:34:30.80Z</value>
+          <uncertainty>0.67</uncertainty>
+        </time>
+        <latitude>
+          <value>35.2070</value>
+        </latitude>
+        <longitude>
+          <value>49.5740</value>
+        </longitude>
+        <depth>
+          <value>22300.0</value>
+        </depth>
+        <quality>
+          <associatedStationCount>4</associatedStationCount>
+          <standardError>0.2000</standardError>
+          <azimuthalGap>339.000</azimuthalGap>
+        </quality>
+        <creationInfo>
+          <author>ISN</author>
+          <agencyID>ISN</agencyID>
+        </creationInfo>
+        <originUncertainty>
+          <preferredDescription>horizontal uncertainty</preferredDescription>
+          <minHorizontalUncertainty>6300.00019073486</minHorizontalUncertainty>
+          <maxHorizontalUncertainty>10500</maxHorizontalUncertainty>
+          <azimuthMaxHorizontalUncertainty>0</azimuthMaxHorizontalUncertainty>
+        </originUncertainty>
+      </origin>
+      <magnitude publicID="smi:ISC/magid=647003002">
+        <mag>
+          <value>3.10</value>
+        </mag>
+        <type>ML</type>
+        <originID>smi:ISC/origid=638344874</originID>
+        <creationInfo>
+          <author>ISN</author>
+        </creationInfo>
+      </magnitude>
+      <preferredMagnitudeID>smi:ISC/magid=647003002</preferredMagnitudeID>
+    </event>
+  </eventParameters>
+</q:quakeml>

@@ -11,7 +11,7 @@ namespace {
 
 // Migrations applied in order; index i takes the schema from version i to
 // i+1 (REQ-4.2). Never edit a shipped migration — append a new one.
-constexpr std::array<const char*, 1> kMigrations = {
+constexpr std::array<const char*, 2> kMigrations = {
     // v0 -> v1: initial schema.
     R"SQL(
     -- Raw source responses, exactly as received (REQ-2.10). Append-only
@@ -116,6 +116,13 @@ constexpr std::array<const char*, 1> kMigrations = {
         run_id       INTEGER REFERENCES run(id)
     );
     CREATE INDEX idx_ingested_file_path ON ingested_file(path, ingested_at);
+    )SQL",
+    // v1 -> v2: depth provenance and source-declared type certainty. The
+    // text formats hide these; QuakeML publishes them, and they decide
+    // whether an origin is usable (issue #23, DM-2026-007).
+    R"SQL(
+    ALTER TABLE observation ADD COLUMN depth_type TEXT;
+    ALTER TABLE observation ADD COLUMN type_certainty TEXT;
     )SQL",
 };
 

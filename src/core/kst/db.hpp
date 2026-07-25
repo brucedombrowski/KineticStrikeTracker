@@ -24,7 +24,7 @@ namespace kst::db {
 
 // Bumped whenever migrations are added. Opening a database newer than this
 // is an error (REQ-4.2).
-inline constexpr int kSchemaVersion = 1;
+inline constexpr int kSchemaVersion = 2;
 
 struct Error {
     std::string message;
