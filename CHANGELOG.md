@@ -7,7 +7,20 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- REQ-2026-001 bumped to v0.2.0 applying the human review received as issue #2 — all seven
+  open questions resolved. REQ-1.1 (whole-Earth model), REQ-2.4 (ISC as the seismic
+  aggregation route; direct IRSC excluded by its no-redistribution licence), and REQ-9.6
+  (CMake approved as build-time tool) amended; REQ-1.6 (coverage model), REQ-2.18 (curated
+  seed dataset), REQ-7.7 (representation-agnostic confidence), REQ-8.8 (coverage grey-out
+  layer) added — 103 requirements total.
+
 ### Added
+- `requirements/evidence/isc-iran-jun2025.txt` — ISC FDSN query result (OQ-07 spike):
+  thirteen IDC (CTBTO) depth-0.0 origins clustered on June 2025 strike nights, basis for
+  ASM-08 and validation case VC-04.
+- Decision memoranda DM-2026-001 (CMake), DM-2026-003 (confidence representation),
+  DM-2026-004 (triangulation deferred), all decided by human review issue #2.
 - Repository scaffolding per the
   [systems-engineering](https://github.com/brucedombrowski/systems-engineering) process framework.
 - `requirements/REQ-2026-001.json` — draft requirements specification, 99 requirements across 13

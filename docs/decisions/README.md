@@ -12,12 +12,9 @@ references to governing requirements or standards.
 
 | ID | Subject | Outcome |
 |---|---|---|
+| [DM-2026-001](DM-2026-001-build-system.md) | Build system | CMake (build-time only; REQ-9.6 amended) |
 | [DM-2026-002](DM-2026-002-license-selection.md) | Open source licence selection | Apache-2.0 |
+| [DM-2026-003](DM-2026-003-confidence-representation.md) | Confidence representation | Store factors, derive presentation (REQ-7.7) |
+| [DM-2026-004](DM-2026-004-triangulation-scope.md) | Independent triangulation in v1 | Deferred to backlog |
 
-## Pending
-
-| ID | Subject | Driver |
-|---|---|---|
-| DM-2026-001 | Build system — hand-written Makefile vs CMake | OQ-01, REQ-9.6 |
-| DM-2026-003 | Confidence representation — numeric score vs ordinal bands | OQ-05, REQ-7.1 |
-| DM-2026-004 | Independent triangulation in v1 scope | OQ-06, REQ-5.8, REQ-5.9 |
+All four decided by human review, issue #2 (2026-07-25).

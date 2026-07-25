@@ -1,0 +1,28 @@
+#EventID|Time|Latitude|Longitude|Depth/km|Author|Catalog|Contributor|ContributorID|MagType|Magnitude|MagAuthor|EventLocationName|EventType
+644515656|2025-06-13T17:42:09.240|33.6454|49.6766|0.0|IDC|IDC|IDC|638727232||||Western Iran|earthquake
+644515658|2025-06-13T18:14:24.010|34.6113|49.8837|0.0|IDC|IDC|IDC|638727234||||Western Iran|earthquake
+644515659|2025-06-13T18:20:20.090|33.9472|50.8960|0.0|IDC|IDC|IDC|638727235||||Northern and central Iran|earthquake
+644515674|2025-06-14T01:40:58.440|32.0668|53.2521|0.0|IDC|IDC|IDC|638727054||||Northern and central Iran|earthquake
+644515676|2025-06-14T01:57:19.610|32.6786|52.2689|0.0|IDC|IDC|IDC|638727056||||Northern and central Iran|earthquake
+644515715|2025-06-14T19:46:26.000|33.1568|51.3298|0.0|IDC|IDC|IDC|638727135||||Northern and central Iran|earthquake
+644515718|2025-06-14T20:08:39.250|32.5753|51.2421|0.0|IDC|IDC|IDC|638727138||||Northern and central Iran|earthquake
+644515726|2025-06-14T23:17:46.840|31.7682|49.6753|0.0|IDC|IDC|IDC|638727155||||Western Iran|earthquake
+644515728|2025-06-14T23:40:49.160|33.5838|49.6003|0.0|IDC|IDC|IDC|638727157||||Western Iran|earthquake
+644515729|2025-06-14T23:51:44.160|33.9341|50.5881|0.0|IDC|IDC|IDC|638727158||||Northern and central Iran|earthquake
+644515771|2025-06-16T00:57:03.980|34.3783|49.0258|0.0|IDC|IDC|IDC|638729742||||Western Iran|earthquake
+644515878|2025-06-17T21:57:28.430|34.9997|52.0554|0.0|IDC|IDC|IDC|638730114||||Northern and central Iran|earthquake
+643546319|2025-06-20T17:49:14.620|35.3963|53.0254|10.0|NEIC|NEIC|NEIC|638416976|MW|5.00|GCMT|Northern and central Iran|earthquake
+644516070|2025-06-22T04:22:25.970|32.4463|50.6806|0.0|IDC|IDC|IDC|638730856||||Northern and central Iran|earthquake
+643919539|2025-06-25T01:34:30.800|35.2070|49.5740|22.3|ISN|ISN|ISN|638344874|ML|3.10|ISN|Western Iran|earthquake
+# Agencies whose data contributed towards the results of this search:
+# AUST      Geoscience Australia                                                             Australia
+# BUC       National Institute for Earth Physics                                             Romania
+# DSN       Dubai Seismic Network                                                            United Arab Emirates
+# GCMT      The Global CMT Project                                                           U.S.A.
+# GFZ       Helmholtz Centre Potsdam GFZ German Research Centre For Geosciences              Germany
+# IDC       International Data Centre, CTBTO                                                 Austria
+# IPEC      The Institute of Physics of the Earth (IPEC)                                     Czech Republic
+# ISN       Iraqi Meteorological and Seismology Organisation                                 Iraq
+# MOS       Geophysical Survey of Russian Academy of Sciences                                Russia
+# NEIC      National Earthquake Information Center                                           U.S.A.
+# NNC       National Nuclear Center                                                          Kazakhstan
