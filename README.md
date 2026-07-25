@@ -88,7 +88,7 @@ docs/
 
 Developed under the [systems-engineering](https://github.com/brucedombrowski/systems-engineering)
 process framework: requirements capture, implementation, decision documentation, verification, and
-version-control traceability. Requirements use RFC 2119 keywords, carry stable IEEE 29148
+version-control traceability. Requirements use BCP 14 (RFC 2119 + RFC 8174) keywords — normative only in ALL CAPS, carry stable IEEE 29148
 identifiers, cite a governing standard, and name a verification method.
 
 Development is open. Planning sessions are archived to the issue tracker as transcript records.
@@ -99,7 +99,7 @@ Development is open. Planning sessions are archived to the issue tracker as tran
 |---|---|---|
 | USGS FDSN event service | A — instrumental | Global catalog; regional coverage insufficient (see above) |
 | EMSC SeismicPortal | A — instrumental | Independent European-Mediterranean catalog |
-| Regional networks (IRSC, AFAD/KOERI) | A — instrumental | Low-Mc regional coverage — the only catalogs that reach strike magnitudes |
+| ISC bulletin (aggregates CTBTO IDC, NEIC, regional agencies) | A — instrumental | The catalog route that reaches strike magnitudes: 13 IDC surface-event detections on June 2025 strike nights (direct IRSC excluded — no-redistribution licence) |
 | NASA FIRMS (VIIRS / MODIS) | A — instrumental | Space-based thermal anomaly detections; sees fire-producing strikes with no seismic signal |
 | USCENTCOM public releases | B — government | Official statements |
 | ACLED | C — curated dataset | Human-coded conflict events with published methodology |

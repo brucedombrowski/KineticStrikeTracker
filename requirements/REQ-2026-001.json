@@ -8,18 +8,18 @@
   "author": "AI agent (Claude), drafted for human review",
   "reviewer": "Bruce Dombrowski — open-question review received as issue #2 (2026-07-25); dispositions applied in v0.2.0",
   "process": "https://github.com/brucedombrowski/systems-engineering — Phase 1: Requirements Capture",
-  "keyword_convention": "RFC 2119",
+  "keyword_convention": "BCP 14 (RFC 2119 as amended by RFC 8174)",
   "notes": [
     "Per SE process principle 1 (review over authoring), this document is a DRAFT. It becomes the v1.0 baseline only after human review and an approving commit.",
     "Requirement IDs are stable per IEEE 29148. Do not renumber; deprecate instead.",
-    "Priority values: mandatory (SHALL), recommended (SHOULD), optional (MAY).",
+    "Priority values: mandatory (SHALL), recommended (SHOULD), optional (MAY). Per BCP 14 (RFC 8174), keywords are normative only when written in ALL CAPS; lowercase instances of these words in rationale, notes, and prose carry no normative weight.",
     "Verification methods: inspection, test, analysis, demonstration — per the taxonomy defined in NPR 7123.1 (and equivalently MIL-STD-961E)."
   ],
   "governing_standards": [
     {
-      "id": "RFC 2119",
-      "title": "Key words for use in RFCs to Indicate Requirement Levels",
-      "application": "Requirement level keywords"
+      "id": "BCP 14 (RFC 2119 + RFC 8174)",
+      "title": "Key words for use in RFCs to Indicate Requirement Levels / Ambiguity of Uppercase vs Lowercase",
+      "application": "Requirement level keywords — normative only in ALL CAPS"
     },
     {
       "id": "IEEE 29148-2018",
