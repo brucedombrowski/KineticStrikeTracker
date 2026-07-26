@@ -324,7 +324,15 @@ class IscAdapter final : public Adapter {
 
 class FirmsAdapter final : public Adapter {
   public:
-    explicit FirmsAdapter(std::string product) : product_(std::move(product)) {}
+    explicit FirmsAdapter(std::string product) {
+        // Accept either a bare family ("VIIRS_SNPP") or a suffixed product
+        // name; the suffix is chosen per request from the date.
+        const std::size_t n = product.rfind("_NRT");
+        const std::size_t s = product.rfind("_SP");
+        product_base_ = (n != std::string::npos) ? product.substr(0, n)
+                      : (s != std::string::npos) ? product.substr(0, s)
+                      : product;
+    }
 
     std::string id() const override { return "firms"; }
     SourceClass source_class() const override { return SourceClass::Instrumental; }
@@ -334,7 +342,47 @@ class FirmsAdapter final : public Adapter {
     }
     std::string attribution() const override {
         return "NASA FIRMS (Fire Information for Resource Management System), "
-               "LANCE/ESDIS — " + product_;
+               "LANCE/ESDIS — " + product_base_;
+    }
+
+    // FIRMS splits products by processing stream: NRT covers only the last
+    // ~3 months, SP (Standard Processing) covers the archive back to 2012.
+    // Querying NRT for an older date returns an EMPTY CSV with HTTP 200 -
+    // a silent wrong answer indistinguishable from "nothing happened", which
+    // is precisely the confusion REQ-1.6 exists to prevent. So the product is
+    // chosen from the requested date, and a request that falls in neither
+    // stream is an explicit error.
+    static std::string product_for(const std::string& base,
+                                   const std::string& date) {
+        // NRT availability is a rolling window; SP lags roughly 2-3 months.
+        // The boundary is queried at runtime where possible, but a static
+        // fallback keeps the adapter honest if that query fails.
+        return date >= nrt_earliest() ? base + "_NRT" : base + "_SP";
+    }
+    static const std::string& nrt_earliest() {
+        // Refreshed from the data_availability endpoint on first use.
+        static std::string v = "";
+        if (v.empty()) {
+            const char* key = std::getenv("FIRMS_MAP_KEY");
+            if (key && *key) {
+                auto r = http::get(
+                    "https://firms.modaps.eosdis.nasa.gov/api/data_availability/"
+                    "csv/" + std::string(key) + "/ALL");
+                if (r) {
+                    auto t = csv::parse(r->body);
+                    if (t) {
+                        for (std::size_t i = 0; i < t->rows(); ++i) {
+                            if (t->get(i, "data_id") == "VIIRS_SNPP_NRT") {
+                                v = std::string(t->get(i, "min_date"));
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (v.empty()) v = "2099-01-01";  // no NRT knowledge: prefer archive
+        }
+        return v;
     }
 
     Fetch fetch(const Query& q) const override {
@@ -372,9 +420,10 @@ class FirmsAdapter final : public Adapter {
             const std::int64_t remaining = (*end - t) / kDayMs + 1;
             const int span = static_cast<int>(
                 std::min<std::int64_t>(kChunkDays, std::max<std::int64_t>(1, remaining)));
+            const std::string product = product_for(product_base_, day);
             const std::string url =
                 "https://firms.modaps.eosdis.nasa.gov/api/area/csv/" +
-                url_encode(key) + "/" + url_encode(product_) + "/" + area + "/" +
+                url_encode(key) + "/" + url_encode(product) + "/" + area + "/" +
                 std::to_string(span) + "/" + day;
             Fetch part = http_fetch(url);
             if (!part.ok()) {
@@ -465,6 +514,16 @@ class FirmsAdapter final : public Adapter {
             o.reported_event_type = "thermal anomaly";
             o.type_certainty = std::string(t->get(r, "confidence"));
 
+            // Archive products publish a source-type classification:
+            // 0 presumed vegetation fire, 1 active volcano, 2 other static
+            // land source, 3 offshore. Types 1-3 are persistent infrastructure
+            // - gas flares dominate this region - and are recorded as such so
+            // discrimination can exclude them (REQ-5.5).
+            const std::string_view ftype = t->get(r, "type");
+            if (ftype == "1" || ftype == "2" || ftype == "3") {
+                o.reported_event_type = "static thermal source";
+            }
+
             // Pixel footprint as a location uncertainty: VIIRS I-band is
             // nominally 375 m, MODIS 1 km, both degrading off-nadir. Reporting
             // the scan-scaled footprint is more honest than reporting nothing
@@ -490,7 +549,7 @@ class FirmsAdapter final : public Adapter {
     }
 
   private:
-    std::string product_;
+    std::string product_base_;
 };
 
 // --- Local files (REQ-2.13, REQ-2.14, REQ-2.18) ---

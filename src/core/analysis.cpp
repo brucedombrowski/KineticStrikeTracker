@@ -64,6 +64,14 @@ Discrimination discriminate(const model::Observation& o) {
     // the whole point of REQ-5.5: a mining region produces a steady stream
     // of them, and a system that cannot tell them from munitions is a
     // false-positive generator wherever industry operates.
+    if (t == "static thermal source") {
+        d.classification = Classification::IndustrialBlast;
+        d.reasons.push_back(
+            "source classifies this as a persistent static thermal source "
+            "(gas flare, volcano, or fixed industrial heat), not a discrete "
+            "event");
+        return d;
+    }
     if (t == "quarry blast" || t == "quarry" || t == "mining explosion" ||
         t == "mine collapse" || t == "experimental explosion" ||
         t == "controlled explosion" || t == "induced or triggered event" ||
