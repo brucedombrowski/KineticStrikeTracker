@@ -16,6 +16,10 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   small; uncertainty too large to separate candidate sites reports `unusable` (REQ-7.8).
 - **Depth discriminant guessed provenance from the value.** It now reads `depthType` from the
   source and records when it declines and why (REQ-5.2 strengthened).
+- **The curated-seed format could not express how well an entry was located.** The parser read
+  every field of the observation model except `location_uncertainty_km`, so a named 5 km island
+  and a 120 km island were indistinguishable in precision. Absent that field REQ-7.8 correctly
+  reports `unknown`, but the format gave a curator no way to state a bound they genuinely had.
 
 ### Changed
 - **ASM-08 and VC-04 corrected.** Both were written from the lossy text format and overstated
@@ -32,6 +36,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   numeric character references, bounded depth/size/name/text/children (REQ-12.3, REQ-12.9).
 - `requirements/evidence/isc-iran-jun2025-quakeml.xml` — the QuakeML record behind DM-2026-007.
 - Schema v2: `depth_type` and `type_certainty` columns.
+- `data/seed/hormuz-2026.json` — nine curated observations from the 2026 Strait of Hormuz
+  campaign (REQ-2.18): Larak Island, the six targets CENTCOM named on 14-15 July, Jask, Qeshm,
+  and the tanker *Sidr*. Each carries a stated location uncertainty (±5 km for a small island,
+  ±60 km for Qeshm), an explicit date-placeholder flag where only a date is published, and
+  casualties and attribution as source-attributed statements only (REQ-11.5). Known strikes at
+  known times and places are better validation data than the June 2025 set because the
+  detection floor can be *measured* against them rather than asserted.
+  **Not yet usable for published reporting — see DM-2026-009 and issue #29.**
+- `docs/decisions/DM-2026-009-reports-in-correlation.md` (**draft, pending review**) — what a
+  non-instrumental report may contribute to an event. Recommends instrumental-only event
+  formation, attach-with-ambiguity for reports, corroboration counted by distinct source, and
+  per-axis derivation of confidence. Proposes amending REQ-7.3 and adding REQ-6.7 / REQ-7.9.
 
 ### Changed
 - REQ-2026-001 v0.3.1: `open_questions` now holds ONLY unresolved items so the count is

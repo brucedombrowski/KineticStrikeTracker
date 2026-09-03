@@ -1,0 +1,92 @@
+[
+  {
+    "id": "larak-island-2026-08-30",
+    "time": "2026-08-30T23:00:00.000Z",
+    "latitude": 26.850,
+    "longitude": 56.360,
+    "location_uncertainty_km": 5.0,
+    "event_type": "explosion",
+    "description": "Larak Island, Hormozgan province, Iran. US strike on two IRGC rocket launchers. CENTCOM stated it took 'limited, precise action' against forces preparing to launch rockets carrying sea mines into the Strait of Hormuz. Tasnim reported three IRGC personnel killed; the IRGC statement referred to fighters and civilians killed and wounded. Timestamp derived from reporting of 'shortly before 3am Dubai time' on Monday 31 August (UTC+4); treat as +/-1 h, not an instrumental origin time. Position is the island centroid; Larak is roughly 5 km across, which is the stated uncertainty. VALIDATION VALUE: FIRMS VIIRS coverage was present on 29 Aug - 2 Sep with 188-313 detections elsewhere in the region, and zero within 0.1 deg of this position. This is a known strike with confirmed satellite coverage and no thermal detection - a measured point on the detection floor, not an absence of event (REQ-8.6).",
+    "author": "agent-drafted from open reporting, pending human review — CENTCOM via The National and JPost, Al Jazeera, Wikipedia '2026 Larak Island attack'"
+  },
+  {
+    "id": "bandar-abbas-area-2026-07-15",
+    "time": "2026-07-15T02:00:00.000Z",
+    "latitude": 27.180,
+    "longitude": 56.280,
+    "location_uncertainty_km": 25.0,
+    "event_type": "explosion",
+    "description": "Bandar Abbas area, Hormozgan province, Iran. Part of a CENTCOM strike wave described as hitting dozens of military targets; locally reported effects included the Mirzaei tunnel (telecommunications outage across northern Bandar Abbas) and damaged power lines. Timestamp is the reported completion of a five-hour mission (10 p.m. ET 14 July); the wave spanned roughly 2026-07-14T21:00Z to 2026-07-15T02:00Z and is NOT a single detonation time. Position is a city-area centroid covering dispersed aim points; 25 km uncertainty reflects that spread, not a located event. COVERAGE CAVEAT: FIRMS VIIRS_SNPP returned zero rows region-wide for 11-15 July 2026 (see issue #27), so the absence of thermal detection here is inconclusive - no coverage, not no event (REQ-1.6).",
+    "author": "agent-drafted from open reporting, pending human review — CENTCOM releases via Iran International and JPost, Al Jazeera"
+  },
+  {
+    "id": "abu-musa-2026-07-15",
+    "time": "2026-07-15T02:00:00.000Z",
+    "latitude": 25.874,
+    "longitude": 55.031,
+    "location_uncertainty_km": 5.0,
+    "event_type": "explosion",
+    "description": "Abu Musa island, named by CENTCOM among targets struck in the 14-15 July wave against Iranian capability to attack shipping. Same five-hour mission window as bandar-abbas-area-2026-07-15. Position is the island centroid; Abu Musa is roughly 4 km across. COVERAGE CAVEAT: falls inside the 11-15 July FIRMS VIIRS_SNPP outage (issue #27) - no thermal coverage, so no inference is available either way.",
+    "author": "agent-drafted from open reporting, pending human review — CENTCOM releases via Iran International and JPost"
+  },
+  {
+    "id": "bushehr-2026-07-15",
+    "time": "2026-07-15T02:00:00.000Z",
+    "latitude": 28.969,
+    "longitude": 50.836,
+    "location_uncertainty_km": 20.0,
+    "event_type": "explosion",
+    "description": "Bushehr, named by CENTCOM among targets struck in the 14-15 July wave. Specific aim points not published; position is a city-area centroid with correspondingly coarse uncertainty. Included to extend the validation set beyond the Strait proper and test regional seismic completeness. COVERAGE CAVEAT: inside the 11-15 July FIRMS VIIRS_SNPP outage (issue #27).",
+    "author": "agent-drafted from open reporting, pending human review — CENTCOM releases via Iran International and JPost"
+  },
+  {
+    "id": "chabahar-2026-07-15",
+    "time": "2026-07-15T02:00:00.000Z",
+    "latitude": 25.292,
+    "longitude": 60.643,
+    "location_uncertainty_km": 15.0,
+    "event_type": "explosion",
+    "description": "Chabahar, Sistan-Baluchistan province, named by CENTCOM among targets in the 14-15 July wave; a port maritime control tower was reported struck and reported hit repeatedly over the following week. Position is a port-area centroid. COVERAGE CAVEAT: inside the 11-15 July FIRMS VIIRS_SNPP outage (issue #27).",
+    "author": "agent-drafted from open reporting, pending human review — CENTCOM releases via Iran International and JPost"
+  },
+  {
+    "id": "konarak-2026-07-15",
+    "time": "2026-07-15T02:00:00.000Z",
+    "latitude": 25.360,
+    "longitude": 60.400,
+    "location_uncertainty_km": 15.0,
+    "event_type": "explosion",
+    "description": "Konarak, Sistan-Baluchistan province, named by CENTCOM among targets in the 14-15 July wave. Specific aim points not published; position is a town-area centroid. COVERAGE CAVEAT: inside the 11-15 July FIRMS VIIRS_SNPP outage (issue #27).",
+    "author": "agent-drafted from open reporting, pending human review — CENTCOM releases via Iran International and JPost"
+  },
+  {
+    "id": "jask-infrastructure-2026-07-20",
+    "time": "2026-07-20T00:00:00.000Z",
+    "latitude": 25.640,
+    "longitude": 57.770,
+    "location_uncertainty_km": 15.0,
+    "event_type": "explosion",
+    "description": "Jask, Hormozgan province. Power facilities and desalination pumps reported struck during a run of consecutive nightly strikes reported through 20 July. Time of day not established from open reporting - the timestamp is a DATE PLACEHOLDER, not an observation. Position is a town-area centroid. Included because struck power and desalination plant is among the more thermally plausible target classes in this set.",
+    "author": "agent-drafted from open reporting, pending human review — CENTCOM releases via Iran International and JPost"
+  },
+  {
+    "id": "qeshm-island-2026-07-20",
+    "time": "2026-07-20T00:00:00.000Z",
+    "latitude": 26.800,
+    "longitude": 55.900,
+    "location_uncertainty_km": 60.0,
+    "event_type": "explosion",
+    "description": "Qeshm Island, reported among locations struck during the mid-to-late July strike series. Time of day not established - the timestamp is a DATE PLACEHOLDER. Qeshm is roughly 120 km along its long axis and no aim point was published, so the 60 km uncertainty is deliberately large. Under REQ-7.8 this entry is expected to be too coarsely located to distinguish candidate events, and is retained precisely to exercise that path rather than to assert a located event.",
+    "author": "agent-drafted from open reporting, pending human review — CENTCOM releases via Iran International and JPost"
+  },
+  {
+    "id": "tanker-sidr-2026-08-31",
+    "time": "2026-08-31T00:00:00.000Z",
+    "latitude": 26.180,
+    "longitude": 56.560,
+    "location_uncertainty_km": 10.0,
+    "event_type": "explosion",
+    "description": "Saudi-owned oil tanker Sidr (Bahri) struck by three projectiles while exiting the Strait of Hormuz. UKMTO placed the incident approximately 17 nautical miles east of Khasab, Oman, on the evening of Monday 31 August; position here is derived from that bearing and distance, not from a published fix. Time of day reported only as evening - the timestamp is a DATE PLACEHOLDER. Saudi Arabia's foreign ministry attributed the attack to Iran and reported two Philippine nationals killed; UKMTO initially reported no casualties. Attribution and casualties are carried as source-attributed statements only (REQ-11.5). VALIDATION VALUE: a surface maritime event with FIRMS coverage present on 31 Aug (199 detections region-wide) - tests whether a struck vessel produces a detectable thermal anomaly.",
+    "author": "agent-drafted from open reporting, pending human review — UKMTO advisory via Iranwire and Seatrade Maritime, Al Jazeera"
+  }
+]

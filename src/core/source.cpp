@@ -673,6 +673,10 @@ class FileAdapter final : public Adapter {
             }
             o.magnitude = dbl("magnitude");
             o.magnitude_type = str("magnitude_type");
+            // A curated entry knows how well it is located: a named small
+            // island is not a province. Absent here, REQ-7.8 keeps location
+            // confidence "unknown" rather than assuming precision.
+            o.location_uncertainty_km = dbl("location_uncertainty_km");
             o.description = str("description");
             o.reported_event_type = str("event_type");
             o.author = str("author");
