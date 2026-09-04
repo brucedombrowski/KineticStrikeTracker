@@ -39,7 +39,25 @@ struct CoverageInterval {
     std::string note;             // e.g. which products were empty
 };
 
-// What an adapter produced for one retrieval, before persistence.
+// One HTTP retrieval, exactly as it came back. An adapter that satisfies a
+// long window by walking it in chunks performs many of these, and REQ-2.10
+// requires every one of them to be persisted with its own URL, timestamp and
+// status: a merged body digested as a whole matches no artifact the service
+// ever served, so it cannot be verified against the source. REQ-4.6 adds that
+// deduplicating the body must not discard the retrieval history.
+struct Retrieval {
+    std::string request_url;
+    std::string requested_at;   // ISO 8601 UTC
+    std::string raw_body;       // unmodified as received (REQ-2.10)
+    std::string sha256;
+    std::string content_type;
+    long http_status = 0;
+    // Parsed from this body alone, so each observation is traceable to the
+    // exact response it came from (REQ-7.4).
+    std::vector<model::Observation> observations;
+};
+
+// What an adapter produced for one logical fetch, before persistence.
 struct Fetch {
     std::vector<model::Observation> observations;
     std::string request_url;      // empty for file sources
@@ -56,6 +74,10 @@ struct Fetch {
     // Chronological, one entry per sub-request. Empty for adapters that
     // retrieve the whole window at once.
     std::vector<CoverageInterval> coverage;
+    // Every retrieval made to satisfy this fetch, in the order made. One
+    // entry for a single-request adapter; one per chunk-and-product for a
+    // chunking one. This is what gets persisted (REQ-2.10, REQ-4.6).
+    std::vector<Retrieval> retrievals;
     bool ok() const { return error.empty(); }
 };
 
@@ -78,6 +100,13 @@ class Adapter {
     virtual std::vector<model::Observation> parse(
         std::string_view body, std::string* error) const = 0;
 };
+
+// Remove a credential from text destined for storage or output (REQ-10.6).
+// Every occurrence is replaced, so a key repeated in a URL and again in an
+// error message cannot survive in one of them. The surrounding text keeps its
+// shape: a reader should still be able to see what was requested and reissue
+// it with their own key.
+std::string redact_secret(std::string text, const std::string& secret);
 
 // --- Built-in adapters ---
 

@@ -81,6 +81,9 @@ class Database {
     bool execute(std::string_view sql);  // no parameters, no rows
 
     int schema_version();
+    // Rowid of the most recent successful INSERT on this connection, so a
+    // caller can tie dependent rows to it (REQ-7.4).
+    std::int64_t last_insert_rowid() const;
     const std::optional<Error>& error() const { return error_; }
 
     sqlite3* handle() const { return db_; }

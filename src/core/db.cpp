@@ -296,6 +296,10 @@ std::optional<Database> Database::open(const std::string& path,
     return db;
 }
 
+std::int64_t Database::last_insert_rowid() const {
+    return db_ ? sqlite3_last_insert_rowid(db_) : 0;
+}
+
 int Database::schema_version() {
     std::optional<Statement> s = prepare("PRAGMA user_version");
     if (!s || !s->step()) return 0;

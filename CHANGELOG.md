@@ -16,6 +16,26 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   small; uncertainty too large to separate candidate sites reports `unusable` (REQ-7.8).
 - **Depth discriminant guessed provenance from the value.** It now reads `depthType` from the
   source and records when it declines and why (REQ-5.2 strengthened).
+- **The FIRMS MAP_KEY was being persisted into the database** (REQ-10.6). Request URLs are
+  stored as provenance, and the key travels in the FIRMS request path, so every `raw_response`
+  row held a live credential. Nothing was ever committed — `data/*.db` is gitignored and no
+  database is tracked — but a database handed to a collaborator, or a bug report quoting a
+  stored URL, would have carried it. Credentials are now stripped from URLs and from error text
+  before either is stored or emitted, leaving the request legible and reissuable with the
+  reader's own key. `redact_secret` is exported and unit-tested rather than left as an internal
+  convenience, because REQ-10.6 is a hard constraint and ought to be verifiable.
+- **Fourteen retrievals were being recorded as one** (issue #28). The FIRMS adapter walks a long
+  window in 5-day chunks, and every chunk collapsed into a single `raw_response` row whose
+  `request_url` named only the last chunk, whose `requested_at` came from the first, whose
+  `http_status` was hardcoded to 200, and whose `sha256` digested a concatenation NASA never
+  served — so the stored response could not be verified against the source, which is the point
+  of content-addressing it. Contrary to REQ-2.10 and REQ-4.6.
+  The adapter interface now carries a `Retrieval` per request, so this is fixed for any future
+  chunking adapter and not only for FIRMS. Each is persisted with its own URL, timestamp and
+  status; bodies remain content-addressed, so re-fetching unchanged content adds a retrieval row
+  and no body. Nothing is concatenated any more — each chunk is parsed on its own, which is also
+  what lets `observation.raw_response_id` name the exact response an observation came from
+  (REQ-7.4). That column existed since schema v1 and had never been populated.
 - **A six-day hole inside a requested window was reported as complete coverage** (issue #27,
   DM-2026-010). NASA's `VIIRS_SNPP` stream returned zero rows for 11-15 July and 3 August 2026
   across the whole Gulf; `coverage_complete` tracked adapter success, not whether the data

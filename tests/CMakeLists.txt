@@ -39,3 +39,8 @@ target_include_directories(test_coverage PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_coverage PRIVATE
     KST_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 add_test(NAME coverage COMMAND test_coverage)
+
+add_executable(test_provenance test_provenance.cpp)
+target_link_libraries(test_provenance PRIVATE kst_core)
+target_include_directories(test_provenance PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+add_test(NAME provenance COMMAND test_provenance)

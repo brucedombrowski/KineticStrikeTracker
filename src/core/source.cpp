@@ -69,6 +69,15 @@ Fetch http_fetch(const std::string& url) {
     f.requested_at = r->requested_at;
     f.content_type = r->content_type;
     f.http_status = r->status;
+
+    Retrieval rt;
+    rt.request_url = url;
+    rt.requested_at = r->requested_at;
+    rt.raw_body = r->body;
+    rt.sha256 = r->sha256;
+    rt.content_type = r->content_type;
+    rt.http_status = r->status;
+    f.retrievals.push_back(std::move(rt));
     return f;
 }
 
@@ -96,7 +105,10 @@ class UsgsAdapter final : public Adapter {
             "&minlongitude=" + num(q.min_longitude) +
             "&maxlongitude=" + num(q.max_longitude);
         Fetch f = http_fetch(url);
-        if (f.ok() && !f.no_data) f.observations = parse(f.raw_body, &f.error);
+        if (f.ok() && !f.no_data) {
+            f.observations = parse(f.raw_body, &f.error);
+            if (!f.retrievals.empty()) f.retrievals.front().observations = f.observations;
+        }
         return f;
     }
 
@@ -208,7 +220,10 @@ class IscAdapter final : public Adapter {
             "&minlongitude=" + num(q.min_longitude) +
             "&maxlongitude=" + num(q.max_longitude);
         Fetch f = http_fetch(url);
-        if (f.ok() && !f.no_data) f.observations = parse(f.raw_body, &f.error);
+        if (f.ok() && !f.no_data) {
+            f.observations = parse(f.raw_body, &f.error);
+            if (!f.retrievals.empty()) f.retrievals.front().observations = f.observations;
+        }
         return f;
     }
 
@@ -449,8 +464,6 @@ class FirmsAdapter final : public Adapter {
             return n;
         };
 
-        std::string merged;
-        bool have_header = false;
         int requests = 0;
         for (std::int64_t t = *start; t <= *end; t += kDayMs * kChunkDays) {
             const std::string day = model::format_iso8601_ms(t).substr(0, 10);
@@ -476,27 +489,44 @@ class FirmsAdapter final : public Adapter {
                 if (!part.ok()) {
                     // Partial coverage is recorded, not silently swallowed
                     // (REQ-2.9).
-                    f.error = part.error + " (at " + day + ", " + product + ")";
+                    f.error = redact_secret(part.error, key) + " (at " + day + ", " +
+                              product + ")";
                     break;
                 }
                 if (part.raw_body.rfind("Invalid MAP_KEY", 0) == 0) {
                     f.error = "FIRMS rejected the MAP_KEY";
                     return f;
                 }
+                // Everything that leaves this scope is redacted: the URL is
+                // persisted, and libcurl's error text can quote it (REQ-10.6).
+                const std::string safe_url = redact_secret(url, key);
                 if (f.requested_at.empty()) f.requested_at = part.requested_at;
-                f.request_url = url;   // one row per fetch today; see issue #28
+                if (f.request_url.empty()) f.request_url = safe_url;
                 if (data_rows(part.raw_body) > 0) {
                     iv.returned_data = true;
                 } else {
                     empty_products.push_back(product);
                 }
-                std::string_view body = part.raw_body;
-                if (have_header) {
-                    const std::size_t nl = body.find('\n');
-                    if (nl != std::string_view::npos) body.remove_prefix(nl + 1);
-                }
-                have_header = true;
-                merged.append(body);
+
+                // Kept whole and parsed on its own. Nothing is concatenated:
+                // a merged body digests to an artifact NASA never served, so
+                // it could not be verified against the source, and no
+                // observation could name the response it came from
+                // (REQ-2.10, REQ-4.6, REQ-7.4).
+                Retrieval rt;
+                rt.request_url = safe_url;
+                rt.requested_at = part.requested_at;
+                rt.raw_body = part.raw_body;
+                rt.sha256 = part.sha256;
+                rt.content_type = "text/csv";
+                rt.http_status = part.http_status;
+                std::string perr;
+                rt.observations = parse(rt.raw_body, &perr);
+                if (f.error.empty() && !perr.empty()) f.error = perr;
+                f.observations.insert(f.observations.end(),
+                                      rt.observations.begin(),
+                                      rt.observations.end());
+                f.retrievals.push_back(std::move(rt));
                 ++requests;
             }
 
@@ -515,15 +545,9 @@ class FirmsAdapter final : public Adapter {
             if (!f.error.empty()) break;
             if (requests > 400) break;   // guard against absurd spans
         }
-        f.raw_body = merged;
-        f.sha256 = http::sha256_hex(merged);
         f.content_type = "text/csv";
         f.http_status = 200;
-        if (!merged.empty()) {
-            std::string perr;
-            f.observations = parse(merged, &perr);
-            if (f.error.empty()) f.error = perr;
-        }
+        f.no_data = f.observations.empty();
         return f;
     }
 
@@ -663,6 +687,16 @@ class FileAdapter final : public Adapter {
         f.sha256 = http::sha256_hex(f.raw_body);  // REQ-12.10
         f.content_type = "application/octet-stream";
         f.observations = parse(f.raw_body, &f.error);
+
+        Retrieval rt;
+        rt.request_url = f.request_url;
+        rt.requested_at = f.requested_at;
+        rt.raw_body = f.raw_body;
+        rt.sha256 = f.sha256;
+        rt.content_type = f.content_type;
+        rt.http_status = 0;   // not an HTTP retrieval
+        rt.observations = f.observations;
+        f.retrievals.push_back(std::move(rt));
         return f;
     }
 
@@ -762,6 +796,17 @@ class FileAdapter final : public Adapter {
 };
 
 }  // namespace
+
+std::string redact_secret(std::string text, const std::string& secret) {
+    if (secret.empty()) return text;
+    static const std::string kMask = "<FIRMS_MAP_KEY>";
+    for (std::size_t p = text.find(secret); p != std::string::npos;
+         p = text.find(secret, p)) {
+        text.replace(p, secret.size(), kMask);
+        p += kMask.size();
+    }
+    return text;
+}
 
 std::unique_ptr<Adapter> make_usgs() { return std::make_unique<UsgsAdapter>(); }
 std::unique_ptr<Adapter> make_isc() { return std::make_unique<IscAdapter>(); }

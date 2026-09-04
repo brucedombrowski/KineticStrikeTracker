@@ -21,7 +21,9 @@ struct SourceResult {
     bool ok = true;
     std::string error;
     std::string sha256;
-    bool body_was_new = true;  // false when dedup matched (REQ-4.6)
+    bool body_was_new = true;  // false when any body was new (REQ-4.6)
+    int retrievals = 0;        // HTTP requests made to satisfy this fetch
+    int bodies_stored = 0;     // of those, how many bodies were not already held
     bool no_data = false;      // queried successfully, nothing in range
     // Per-sub-interval observation record, for adapters that subdivide their
     // request. Empty for single-request adapters.

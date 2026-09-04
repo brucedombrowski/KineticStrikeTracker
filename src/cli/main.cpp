@@ -141,9 +141,19 @@ int cmd_ingest(const Options& o, bool quiet = false) {
                           << ": no data in range (queried successfully)\n";
             } else if (s.ok) {
                 std::cout << "  " << s.source_id << ": " << s.observations
-                          << " observations"
-                          << (s.body_was_new ? "" : "  (body deduplicated)")
-                          << "\n";
+                          << " observations";
+                // Retrievals and bodies are different counts: a chunk whose
+                // content has not changed adds a retrieval row and no body
+                // (REQ-4.6).
+                if (s.retrievals > 1 || s.bodies_stored != s.retrievals) {
+                    std::cout << "  (" << s.retrievals
+                              << (s.retrievals == 1 ? " retrieval, "
+                                                    : " retrievals, ")
+                              << s.bodies_stored << " new "
+                              << (s.bodies_stored == 1 ? "body" : "bodies")
+                              << ")";
+                }
+                std::cout << "\n";
             } else {
                 std::cout << "  " << s.source_id << ": FAILED — " << s.error
                           << "\n";

@@ -92,7 +92,6 @@ IngestReport ingest(db::Database& database,
             report.sources.push_back(std::move(sr));
             continue;
         }
-        sr.sha256 = f.sha256;
         sr.no_data = f.no_data;
         sr.coverage = f.coverage;
         sr.gaps = coverage_gaps(f.coverage);
@@ -119,77 +118,100 @@ IngestReport ingest(db::Database& database,
             }
         }
 
-        // Content-addressed body: stored once (REQ-4.6).
-        if (auto exists = database.prepare(
-                "SELECT COUNT(*) FROM raw_body WHERE sha256 = ?")) {
-            exists->bind(1, f.sha256);
-            if (exists->step() && exists->column_int(0) > 0) {
-                sr.body_was_new = false;
+        // Every retrieval is persisted with its own URL, timestamp and
+        // status (REQ-2.10). Bodies stay content-addressed, so a chunk whose
+        // content has not changed since the last run adds a retrieval row and
+        // no body — deduplication must not discard retrieval history
+        // (REQ-4.6). Retrievals are stored in the order they were made, which
+        // is canonical because the chunk walk is (REQ-1.2).
+        sr.retrievals = static_cast<int>(f.retrievals.size());
+        bool any_body_new = false;
+        for (const source::Retrieval& rt : f.retrievals) {
+            bool body_is_new = true;
+            if (auto exists = database.prepare(
+                    "SELECT COUNT(*) FROM raw_body WHERE sha256 = ?")) {
+                exists->bind(1, rt.sha256);
+                if (exists->step() && exists->column_int(0) > 0) {
+                    body_is_new = false;
+                }
             }
-        }
-        if (sr.body_was_new) {
-            if (auto ins = database.prepare(
-                    "INSERT INTO raw_body(sha256,body,byte_count,first_seen) "
-                    "VALUES(?,?,?,?)")) {
-                ins->bind(1, f.sha256)
-                    .bind(2, f.raw_body)
-                    .bind(3, static_cast<std::int64_t>(f.raw_body.size()))
-                    .bind(4, f.requested_at);
-                ins->execute();
+            if (body_is_new) {
+                if (auto ins = database.prepare(
+                        "INSERT INTO raw_body(sha256,body,byte_count,first_seen) "
+                        "VALUES(?,?,?,?)")) {
+                    ins->bind(1, rt.sha256)
+                        .bind(2, rt.raw_body)
+                        .bind(3, static_cast<std::int64_t>(rt.raw_body.size()))
+                        .bind(4, rt.requested_at);
+                    ins->execute();
+                }
+                any_body_new = true;
+                ++sr.bodies_stored;
             }
-        }
-        // The retrieval itself is always recorded, dedup or not (REQ-4.6).
-        if (auto ins = database.prepare(
-                "INSERT INTO raw_response(source_id,request_url,requested_at,"
-                "http_status,content_type,sha256) VALUES(?,?,?,?,?,?)")) {
-            ins->bind(1, sr.source_id)
-                .bind(2, f.request_url)
-                .bind(3, f.requested_at)
-                .bind(4, static_cast<std::int64_t>(f.http_status))
-                .bind(5, f.content_type)
-                .bind(6, f.sha256);
-            ins->execute();
-        }
 
-        for (const model::Observation& o : f.observations) {
-            auto up = database.prepare(
-                "INSERT INTO observation(observation_uid,source_id,source_class,"
-                "native_id,origin_time,latitude,longitude,depth_km,"
-                "depth_is_fixed,magnitude,magnitude_type,reported_event_type,"
-                "description,is_curated,location_uncertainty_km,depth_type,"
-                "type_certainty,author) "
-                "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
-                "ON CONFLICT(source_id,native_id) DO UPDATE SET "
-                "origin_time=excluded.origin_time,latitude=excluded.latitude,"
-                "longitude=excluded.longitude,depth_km=excluded.depth_km,"
-                "depth_is_fixed=excluded.depth_is_fixed,"
-                "magnitude=excluded.magnitude,"
-                "magnitude_type=excluded.magnitude_type,"
-                "reported_event_type=excluded.reported_event_type,"
-                "description=excluded.description,"
-                "location_uncertainty_km=excluded.location_uncertainty_km,"
-                "depth_type=excluded.depth_type,"
-                "type_certainty=excluded.type_certainty,author=excluded.author");
-            if (!up) continue;
-            up->bind(1, o.observation_uid)
-                .bind(2, o.source_id)
-                .bind(3, model::to_string(o.source_class))
-                .bind(4, o.native_id)
-                .bind(5, o.origin_time);
-            o.latitude ? up->bind(6, *o.latitude) : up->bind_null(6);
-            o.longitude ? up->bind(7, *o.longitude) : up->bind_null(7);
-            o.depth_km ? up->bind(8, *o.depth_km) : up->bind_null(8);
-            up->bind(9, static_cast<std::int64_t>(o.depth_is_fixed ? 1 : 0));
-            o.magnitude ? up->bind(10, *o.magnitude) : up->bind_null(10);
-            up->bind(11, o.magnitude_type)
-                .bind(12, o.reported_event_type)
-                .bind(13, o.description)
-                .bind(14, static_cast<std::int64_t>(o.is_curated ? 1 : 0));
-            o.location_uncertainty_km ? up->bind(15, *o.location_uncertainty_km)
-                                      : up->bind_null(15);
-            up->bind(16, o.depth_type).bind(17, o.type_certainty).bind(18, o.author);
-            if (up->execute()) ++sr.observations;
+            std::int64_t response_id = 0;
+            if (auto ins = database.prepare(
+                    "INSERT INTO raw_response(source_id,request_url,requested_at,"
+                    "http_status,content_type,sha256) VALUES(?,?,?,?,?,?)")) {
+                ins->bind(1, sr.source_id)
+                    .bind(2, rt.request_url)
+                    .bind(3, rt.requested_at)
+                    .bind(4, static_cast<std::int64_t>(rt.http_status))
+                    .bind(5, rt.content_type)
+                    .bind(6, rt.sha256);
+                if (ins->execute()) response_id = database.last_insert_rowid();
+            }
+
+            // Each observation names the response it was parsed from, so the
+            // provenance chain is reproducible from stored data (REQ-7.4).
+            for (const model::Observation& o : rt.observations) {
+                auto up = database.prepare(
+                    "INSERT INTO observation(observation_uid,source_id,source_class,"
+                    "native_id,origin_time,latitude,longitude,depth_km,"
+                    "depth_is_fixed,magnitude,magnitude_type,reported_event_type,"
+                    "description,is_curated,location_uncertainty_km,depth_type,"
+                    "type_certainty,author,raw_response_id) "
+                    "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) "
+                    "ON CONFLICT(source_id,native_id) DO UPDATE SET "
+                    "origin_time=excluded.origin_time,latitude=excluded.latitude,"
+                    "longitude=excluded.longitude,depth_km=excluded.depth_km,"
+                    "depth_is_fixed=excluded.depth_is_fixed,"
+                    "magnitude=excluded.magnitude,"
+                    "magnitude_type=excluded.magnitude_type,"
+                    "reported_event_type=excluded.reported_event_type,"
+                    "description=excluded.description,"
+                    "location_uncertainty_km=excluded.location_uncertainty_km,"
+                    "depth_type=excluded.depth_type,"
+                    "type_certainty=excluded.type_certainty,author=excluded.author,"
+                    "raw_response_id=excluded.raw_response_id");
+                if (!up) continue;
+                up->bind(1, o.observation_uid)
+                    .bind(2, o.source_id)
+                    .bind(3, model::to_string(o.source_class))
+                    .bind(4, o.native_id)
+                    .bind(5, o.origin_time);
+                o.latitude ? up->bind(6, *o.latitude) : up->bind_null(6);
+                o.longitude ? up->bind(7, *o.longitude) : up->bind_null(7);
+                o.depth_km ? up->bind(8, *o.depth_km) : up->bind_null(8);
+                up->bind(9, static_cast<std::int64_t>(o.depth_is_fixed ? 1 : 0));
+                o.magnitude ? up->bind(10, *o.magnitude) : up->bind_null(10);
+                up->bind(11, o.magnitude_type)
+                    .bind(12, o.reported_event_type)
+                    .bind(13, o.description)
+                    .bind(14, static_cast<std::int64_t>(o.is_curated ? 1 : 0));
+                o.location_uncertainty_km ? up->bind(15, *o.location_uncertainty_km)
+                                          : up->bind_null(15);
+                up->bind(16, o.depth_type).bind(17, o.type_certainty)
+                  .bind(18, o.author);
+                response_id ? up->bind(19, response_id) : up->bind_null(19);
+                if (up->execute()) ++sr.observations;
+            }
         }
+        sr.body_was_new = any_body_new;
+        // A digest identifies a body, so it is only meaningful for a source
+        // that made exactly one retrieval.
+        if (f.retrievals.size() == 1) sr.sha256 = f.retrievals.front().sha256;
+
         report.total_observations += sr.observations;
         report.sources.push_back(std::move(sr));
     }
