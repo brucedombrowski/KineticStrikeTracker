@@ -37,7 +37,7 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   what lets `observation.raw_response_id` name the exact response an observation came from
   (REQ-7.4). That column existed since schema v1 and had never been populated.
 - **A six-day hole inside a requested window was reported as complete coverage** (issue #27,
-  DM-2026-010). NASA's `VIIRS_SNPP` stream returned zero rows for 11-15 July and 3 August 2026
+  DM-2026-010, approved). NASA's `VIIRS_SNPP` stream returned zero rows for 11-15 July and 3 August 2026
   across the whole Gulf; `coverage_complete` tracked adapter success, not whether the data
   returned spanned the window asked for, so the run printed `coverage complete` over the days of
   the largest strike wave in the period. Adapters that subdivide a request now report a coverage

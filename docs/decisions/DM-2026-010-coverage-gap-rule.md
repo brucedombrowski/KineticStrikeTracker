@@ -1,7 +1,8 @@
 # DM-2026-010 — When a Window Counts as Unobserved
 
 - **Date:** 2026-09-03
-- **Status:** **Draft — pending human review**
+- **Status:** **Approved**
+- **Decided by:** Bruce Dombrowski ("approve dm-010")
 - **Drafted by:** agent, while fixing issue #27
 - **Resolves:** issue #27 (criterion 2) · **Affects:** REQ-1.6, REQ-8.6, REQ-2.15
 
