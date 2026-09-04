@@ -1,6 +1,7 @@
 #include "kst/source.hpp"
 
 #include <algorithm>
+#include <map>
 #include <cctype>
 #include <cstdio>
 #include <cstdlib>
@@ -324,14 +325,22 @@ class IscAdapter final : public Adapter {
 
 class FirmsAdapter final : public Adapter {
   public:
-    explicit FirmsAdapter(std::string product) {
+    explicit FirmsAdapter(std::vector<std::string> products) {
         // Accept either a bare family ("VIIRS_SNPP") or a suffixed product
         // name; the suffix is chosen per request from the date.
-        const std::size_t n = product.rfind("_NRT");
-        const std::size_t s = product.rfind("_SP");
-        product_base_ = (n != std::string::npos) ? product.substr(0, n)
-                      : (s != std::string::npos) ? product.substr(0, s)
-                      : product;
+        for (std::string& product : products) {
+            const std::size_t n = product.rfind("_NRT");
+            const std::size_t s = product.rfind("_SP");
+            products_.push_back((n != std::string::npos) ? product.substr(0, n)
+                              : (s != std::string::npos) ? product.substr(0, s)
+                              : product);
+        }
+        if (products_.empty()) products_.push_back("VIIRS_SNPP");
+        // Canonical order: the merged body must not depend on the order the
+        // caller happened to list products in (REQ-1.2).
+        std::sort(products_.begin(), products_.end());
+        products_.erase(std::unique(products_.begin(), products_.end()),
+                        products_.end());
     }
 
     std::string id() const override { return "firms"; }
@@ -341,8 +350,13 @@ class FirmsAdapter final : public Adapter {
                "requested";
     }
     std::string attribution() const override {
+        std::string joined;
+        for (const std::string& p : products_) {
+            if (!joined.empty()) joined += ", ";
+            joined += p;
+        }
         return "NASA FIRMS (Fire Information for Resource Management System), "
-               "LANCE/ESDIS — " + product_base_;
+               "LANCE/ESDIS — " + joined;
     }
 
     // FIRMS splits products by processing stream: NRT covers only the last
@@ -357,32 +371,36 @@ class FirmsAdapter final : public Adapter {
         // NRT availability is a rolling window; SP lags roughly 2-3 months.
         // The boundary is queried at runtime where possible, but a static
         // fallback keeps the adapter honest if that query fails.
-        return date >= nrt_earliest() ? base + "_NRT" : base + "_SP";
+        return date >= nrt_earliest(base) ? base + "_NRT" : base + "_SP";
     }
-    static const std::string& nrt_earliest() {
-        // Refreshed from the data_availability endpoint on first use.
-        static std::string v = "";
-        if (v.empty()) {
-            const char* key = std::getenv("FIRMS_MAP_KEY");
-            if (key && *key) {
-                auto r = http::get(
-                    "https://firms.modaps.eosdis.nasa.gov/api/data_availability/"
-                    "csv/" + std::string(key) + "/ALL");
-                if (r) {
-                    auto t = csv::parse(r->body);
-                    if (t) {
-                        for (std::size_t i = 0; i < t->rows(); ++i) {
-                            if (t->get(i, "data_id") == "VIIRS_SNPP_NRT") {
-                                v = std::string(t->get(i, "min_date"));
-                                break;
-                            }
+    // The NRT boundary differs per product, so it is looked up per product
+    // rather than read off VIIRS_SNPP and applied to everything.
+    static const std::string& nrt_earliest(const std::string& base) {
+        static std::map<std::string, std::string> cache;
+        auto it = cache.find(base);
+        if (it != cache.end()) return it->second;
+
+        std::string v;
+        const char* key = std::getenv("FIRMS_MAP_KEY");
+        if (key && *key) {
+            auto r = http::get(
+                "https://firms.modaps.eosdis.nasa.gov/api/data_availability/"
+                "csv/" + std::string(key) + "/ALL");
+            if (r) {
+                auto t = csv::parse(r->body);
+                if (t) {
+                    const std::string want = base + "_NRT";
+                    for (std::size_t i = 0; i < t->rows(); ++i) {
+                        if (t->get(i, "data_id") == want) {
+                            v = std::string(t->get(i, "min_date"));
+                            break;
                         }
                     }
                 }
             }
-            if (v.empty()) v = "2099-01-01";  // no NRT knowledge: prefer archive
         }
-        return v;
+        if (v.empty()) v = "2099-01-01";  // no NRT knowledge: prefer archive
+        return cache.emplace(base, std::move(v)).first->second;
     }
 
     Fetch fetch(const Query& q) const override {
@@ -412,6 +430,25 @@ class FirmsAdapter final : public Adapter {
         constexpr std::int64_t kDayMs = 86400000;
         constexpr int kChunkDays = 5;   // FIRMS rejects anything above 5
 
+        // Rows beyond the header — the fact that decides whether this
+        // sub-interval was observed at all, as distinct from quiet.
+        const auto data_rows = [](std::string_view body) -> std::size_t {
+            std::size_t nl = body.find('\n');
+            if (nl == std::string_view::npos) return 0;
+            body.remove_prefix(nl + 1);
+            std::size_t n = 0;
+            while (!body.empty()) {
+                nl = body.find('\n');
+                std::string_view line =
+                    nl == std::string_view::npos ? body : body.substr(0, nl);
+                while (!line.empty() && line.back() == '\r') line.remove_suffix(1);
+                if (!line.empty()) ++n;
+                if (nl == std::string_view::npos) break;
+                body.remove_prefix(nl + 1);
+            }
+            return n;
+        };
+
         std::string merged;
         bool have_header = false;
         int requests = 0;
@@ -420,31 +457,63 @@ class FirmsAdapter final : public Adapter {
             const std::int64_t remaining = (*end - t) / kDayMs + 1;
             const int span = static_cast<int>(
                 std::min<std::int64_t>(kChunkDays, std::max<std::int64_t>(1, remaining)));
-            const std::string product = product_for(product_base_, day);
-            const std::string url =
-                "https://firms.modaps.eosdis.nasa.gov/api/area/csv/" +
-                url_encode(key) + "/" + url_encode(product) + "/" + area + "/" +
-                std::to_string(span) + "/" + day;
-            Fetch part = http_fetch(url);
-            if (!part.ok()) {
-                // Partial coverage is recorded, not silently swallowed (REQ-2.9).
-                f.error = part.error + " (at " + day + ")";
-                break;
+
+            CoverageInterval iv;
+            iv.start = day;
+            iv.end = model::format_iso8601_ms(t + kDayMs * (span - 1)).substr(0, 10);
+
+            // Every product is asked for every chunk, so one satellite's
+            // outage shows as a hole in that product alone while the others
+            // still cover the interval (REQ-2.15).
+            std::vector<std::string> empty_products;
+            for (const std::string& base : products_) {
+                const std::string product = product_for(base, day);
+                const std::string url =
+                    "https://firms.modaps.eosdis.nasa.gov/api/area/csv/" +
+                    url_encode(key) + "/" + url_encode(product) + "/" + area +
+                    "/" + std::to_string(span) + "/" + day;
+                Fetch part = http_fetch(url);
+                if (!part.ok()) {
+                    // Partial coverage is recorded, not silently swallowed
+                    // (REQ-2.9).
+                    f.error = part.error + " (at " + day + ", " + product + ")";
+                    break;
+                }
+                if (part.raw_body.rfind("Invalid MAP_KEY", 0) == 0) {
+                    f.error = "FIRMS rejected the MAP_KEY";
+                    return f;
+                }
+                if (f.requested_at.empty()) f.requested_at = part.requested_at;
+                f.request_url = url;   // one row per fetch today; see issue #28
+                if (data_rows(part.raw_body) > 0) {
+                    iv.returned_data = true;
+                } else {
+                    empty_products.push_back(product);
+                }
+                std::string_view body = part.raw_body;
+                if (have_header) {
+                    const std::size_t nl = body.find('\n');
+                    if (nl != std::string_view::npos) body.remove_prefix(nl + 1);
+                }
+                have_header = true;
+                merged.append(body);
+                ++requests;
             }
-            if (part.raw_body.rfind("Invalid MAP_KEY", 0) == 0) {
-                f.error = "FIRMS rejected the MAP_KEY";
-                return f;
+
+            if (!empty_products.empty()) {
+                std::string joined;
+                for (const std::string& p : empty_products) {
+                    if (!joined.empty()) joined += ", ";
+                    joined += p;
+                }
+                iv.note = (iv.returned_data ? "no rows from "
+                                            : "no rows from any product: ") +
+                          joined;
             }
-            if (f.requested_at.empty()) f.requested_at = part.requested_at;
-            f.request_url = url;   // last request; each is logged by the caller
-            std::string_view body = part.raw_body;
-            if (have_header) {
-                const std::size_t nl = body.find('\n');
-                if (nl != std::string_view::npos) body.remove_prefix(nl + 1);
-            }
-            have_header = true;
-            merged.append(body);
-            if (++requests > 200) break;   // guard against absurd spans
+            f.coverage.push_back(std::move(iv));
+
+            if (!f.error.empty()) break;
+            if (requests > 400) break;   // guard against absurd spans
         }
         f.raw_body = merged;
         f.sha256 = http::sha256_hex(merged);
@@ -549,7 +618,7 @@ class FirmsAdapter final : public Adapter {
     }
 
   private:
-    std::string product_base_;
+    std::vector<std::string> products_;
 };
 
 // --- Local files (REQ-2.13, REQ-2.14, REQ-2.18) ---
@@ -697,8 +766,8 @@ class FileAdapter final : public Adapter {
 std::unique_ptr<Adapter> make_usgs() { return std::make_unique<UsgsAdapter>(); }
 std::unique_ptr<Adapter> make_isc() { return std::make_unique<IscAdapter>(); }
 
-std::unique_ptr<Adapter> make_firms(std::string product) {
-    return std::make_unique<FirmsAdapter>(std::move(product));
+std::unique_ptr<Adapter> make_firms(std::vector<std::string> products) {
+    return std::make_unique<FirmsAdapter>(std::move(products));
 }
 
 std::unique_ptr<Adapter> make_file(std::string path, std::string source_id,

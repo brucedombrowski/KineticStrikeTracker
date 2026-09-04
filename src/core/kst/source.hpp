@@ -26,6 +26,19 @@ struct Query {
     double max_longitude = 180.0;
 };
 
+// One sub-interval of a requested window, and whether the source actually
+// returned data for it (REQ-1.6). Only an adapter that subdivides its request
+// can report these; a single-request adapter reports one interval spanning
+// the query. The distinction they enable is the one REQ-8.6 turns on: a
+// window is only as observed as its emptiest part, and "the source answered"
+// is not the same fact as "the source answered for every day we asked about".
+struct CoverageInterval {
+    std::string start;            // ISO 8601 UTC date, inclusive
+    std::string end;              // ISO 8601 UTC date, inclusive
+    bool returned_data = false;
+    std::string note;             // e.g. which products were empty
+};
+
 // What an adapter produced for one retrieval, before persistence.
 struct Fetch {
     std::vector<model::Observation> observations;
@@ -40,6 +53,9 @@ struct Fetch {
     // "no events here" and "we could not look" are different facts, and
     // conflating them is exactly what REQ-1.6's coverage model forbids.
     bool no_data = false;
+    // Chronological, one entry per sub-request. Empty for adapters that
+    // retrieve the whole window at once.
+    std::vector<CoverageInterval> coverage;
     bool ok() const { return error.empty(); }
 };
 
@@ -82,7 +98,14 @@ std::unique_ptr<Adapter> make_isc();
 // with strikes but also with agriculture, wildfire, industry, and — heavily in
 // this region — gas flaring. The adapter therefore reports 'thermal anomaly',
 // never 'explosion', and lets discrimination do its job.
-std::unique_ptr<Adapter> make_firms(std::string product = "VIIRS_SNPP_NRT");
+// REQ-2.15 names VIIRS 375 m *and* MODIS. Querying one product alone makes
+// the run hostage to one satellite: NASA's VIIRS_SNPP stream returned zero
+// rows for 11-15 July 2026 across the whole Gulf while NOAA-20, NOAA-21 and
+// MODIS all had data, and the run reported complete coverage (issue #27).
+// Products are queried together and merged under one source id, because they
+// share an upstream origin and must not count as independent (REQ-7.3).
+std::unique_ptr<Adapter> make_firms(
+    std::vector<std::string> products = {"VIIRS_SNPP", "MODIS"});
 
 // Local files: GeoJSON, FDSN text, or curated seed JSON (REQ-2.13, REQ-2.18).
 // Granted no more trust than a network response (REQ-2.14).

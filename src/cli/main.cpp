@@ -40,6 +40,11 @@ constexpr const char* kUsage =
     "  --firms            include NASA FIRMS thermal detections\n"
     "                     (needs FIRMS_MAP_KEY; free key at\n"
     "                      https://firms.modaps.eosdis.nasa.gov/api/map_key/)\n"
+    "  --firms-product P  FIRMS product family, repeatable; implies --firms.\n"
+    "                     Default is VIIRS_SNPP and MODIS together (REQ-2.15).\n"
+    "                     One product alone makes the run hostage to one\n"
+    "                     satellite's outages. Merged under one source id,\n"
+    "                     because they share an origin (REQ-7.3).\n"
     "  --offline          skip network sources\n"
     "  --version, --help\n"
     "\n"
@@ -57,6 +62,7 @@ struct Options {
     std::string out_dir = "out";
     bool offline = false;
     bool firms = false;
+    std::vector<std::string> firms_products;   // empty = adapter default
 };
 
 bool parse_bbox(const std::string& s, Options& o) {
@@ -89,7 +95,11 @@ std::vector<std::unique_ptr<kst::source::Adapter>> build_adapters(
     if (!o.offline) {
         a.push_back(kst::source::make_isc());   // strike-capable route
         a.push_back(kst::source::make_usgs());  // global reference
-        if (o.firms) a.push_back(kst::source::make_firms());
+        if (o.firms) {
+            a.push_back(o.firms_products.empty()
+                            ? kst::source::make_firms()
+                            : kst::source::make_firms(o.firms_products));
+        }
     }
     for (const std::string& f : o.files) {
         a.push_back(kst::source::make_file(
@@ -139,6 +149,17 @@ int cmd_ingest(const Options& o, bool quiet = false) {
                           << "\n";
             }
         }
+        for (const auto& s2 : report.sources) {
+            if (s2.gaps.empty()) continue;
+            std::cout << "  " << s2.source_id << ": NOT OBSERVED in "
+                      << s2.gaps.size() << " of " << s2.coverage.size()
+                      << " sub-intervals —\n";
+            for (const auto& iv : s2.gaps) {
+                std::cout << "      " << iv.start << " .. " << iv.end;
+                if (!iv.note.empty()) std::cout << "  (" << iv.note << ")";
+                std::cout << "\n";
+            }
+        }
         std::cout << "ingested " << report.total_observations
                   << " observations; coverage "
                   << (report.coverage_complete ? "complete" : "INCOMPLETE")
@@ -158,10 +179,14 @@ int cmd_report(const Options& o, bool write_files) {
     auto observations = kst::pipeline::load_observations(*db);
     auto events = kst::analysis::correlate(observations);
 
+    // Constructing an adapter touches no network; only fetch() does. Build
+    // the full set regardless of --offline so that a replay still states its
+    // detection limitations and attributions (REQ-8.6, REQ-2.12) — reporting
+    // without them was silently dropping the limitations section entirely.
     Options probe = o;
-    probe.offline = true;  // coverage notes need no network
-    auto adapters = build_adapters(o);
-    auto coverage = kst::pipeline::coverage_notes(adapters);
+    probe.offline = false;
+    auto adapters = build_adapters(probe);
+    auto coverage = kst::pipeline::coverage_notes(adapters, &*db);
     std::vector<std::string> attributions;
     for (const auto& a : adapters) {
         attributions.push_back(a->attribution() + " — " + a->data_licence());
@@ -238,6 +263,10 @@ int main(int argc, char** argv) {
         else if (a == "--seed") o.seeds.push_back(next());
         else if (a == "--offline") o.offline = true;
         else if (a == "--firms") o.firms = true;
+        else if (a == "--firms-product") {
+            o.firms = true;
+            o.firms_products.push_back(next());
+        }
         else if (a == "--bbox") {
             if (!parse_bbox(next(), o)) {
                 std::cerr << "kst: --bbox expects S,N,W,E\n";

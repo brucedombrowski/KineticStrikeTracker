@@ -32,3 +32,10 @@ target_include_directories(test_xml PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(test_xml PRIVATE
     KST_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 add_test(NAME xml COMMAND test_xml)
+
+add_executable(test_coverage test_coverage.cpp)
+target_link_libraries(test_coverage PRIVATE kst_core)
+target_include_directories(test_coverage PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_compile_definitions(test_coverage PRIVATE
+    KST_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
+add_test(NAME coverage COMMAND test_coverage)

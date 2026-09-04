@@ -61,6 +61,22 @@ std::string terminal_safe(std::string_view s) {
 
 }  // namespace
 
+std::vector<source::CoverageInterval> coverage_gaps(
+    const std::vector<source::CoverageInterval>& intervals) {
+    std::vector<source::CoverageInterval> empty;
+    bool any_data = false;
+    for (const source::CoverageInterval& iv : intervals) {
+        if (iv.returned_data) {
+            any_data = true;
+        } else {
+            empty.push_back(iv);
+        }
+    }
+    // Nothing anywhere is "nothing in range", not a hole. See the header.
+    if (!any_data) return {};
+    return empty;
+}
+
 IngestReport ingest(db::Database& database,
                     const std::vector<std::unique_ptr<source::Adapter>>& adapters,
                     const source::Query& query) {
@@ -78,6 +94,30 @@ IngestReport ingest(db::Database& database,
         }
         sr.sha256 = f.sha256;
         sr.no_data = f.no_data;
+        sr.coverage = f.coverage;
+        sr.gaps = coverage_gaps(f.coverage);
+        if (!sr.gaps.empty()) {
+            // A hole inside a window the source was otherwise answering. The
+            // run answered, but not for all of what was asked (REQ-1.6).
+            report.coverage_complete = false;
+        }
+        for (const source::CoverageInterval& iv : f.coverage) {
+            if (auto ins = database.prepare(
+                    "INSERT INTO coverage_interval(source_id,start_date,"
+                    "end_date,returned_data,note,recorded_at) "
+                    "VALUES(?,?,?,?,?,?) "
+                    "ON CONFLICT(source_id,start_date,end_date) DO UPDATE SET "
+                    "returned_data=excluded.returned_data,"
+                    "note=excluded.note,recorded_at=excluded.recorded_at")) {
+                ins->bind(1, sr.source_id)
+                    .bind(2, iv.start)
+                    .bind(3, iv.end)
+                    .bind(4, static_cast<std::int64_t>(iv.returned_data ? 1 : 0))
+                    .bind(5, iv.note)
+                    .bind(6, f.requested_at);
+                ins->execute();
+            }
+        }
 
         // Content-addressed body: stored once (REQ-4.6).
         if (auto exists = database.prepare(
@@ -193,11 +233,30 @@ std::vector<model::Observation> load_observations(db::Database& database) {
 }
 
 std::vector<Coverage> coverage_notes(
-    const std::vector<std::unique_ptr<source::Adapter>>& adapters) {
+    const std::vector<std::unique_ptr<source::Adapter>>& adapters,
+    db::Database* database) {
     std::vector<Coverage> out;
     for (const auto& a : adapters) {
         Coverage c;
         c.source_id = a->id();
+        if (database) {
+            std::vector<source::CoverageInterval> stored;
+            if (auto q = database->prepare(
+                    "SELECT start_date,end_date,returned_data,note FROM "
+                    "coverage_interval WHERE source_id = ? "
+                    "ORDER BY start_date, end_date")) {   // canonical (REQ-6.3)
+                q->bind(1, c.source_id);
+                while (q->step()) {
+                    source::CoverageInterval iv;
+                    iv.start = q->column_text(0);
+                    iv.end = q->column_text(1);
+                    iv.returned_data = q->column_int(2) != 0;
+                    iv.note = q->column_text(3);
+                    stored.push_back(std::move(iv));
+                }
+            }
+            c.gaps = coverage_gaps(stored);
+        }
         if (c.source_id == "usgs") {
             c.note =
                 "Global catalog. Magnitude of completeness over the Middle "
@@ -222,6 +281,47 @@ std::vector<Coverage> coverage_notes(
         }
         out.push_back(std::move(c));
     }
+
+    // A gap recorded during ingest must never be silently dropped because the
+    // reporting invocation happened not to construct that adapter. Anything
+    // the database knows about is stated (REQ-8.6).
+    if (database) {
+        if (auto q = database->prepare(
+                "SELECT DISTINCT source_id FROM coverage_interval "
+                "ORDER BY source_id")) {   // canonical (REQ-6.3)
+            while (q->step()) {
+                const std::string sid = q->column_text(0);
+                bool known = false;
+                for (const Coverage& c : out) {
+                    if (c.source_id == sid) known = true;
+                }
+                if (known) continue;
+                Coverage c;
+                c.source_id = sid;
+                c.note =
+                    "Stored coverage from an earlier ingest; this run did not "
+                    "configure the adapter, so only its recorded intervals "
+                    "are known here.";
+                std::vector<source::CoverageInterval> stored;
+                if (auto g = database->prepare(
+                        "SELECT start_date,end_date,returned_data,note FROM "
+                        "coverage_interval WHERE source_id = ? "
+                        "ORDER BY start_date, end_date")) {
+                    g->bind(1, sid);
+                    while (g->step()) {
+                        source::CoverageInterval iv;
+                        iv.start = g->column_text(0);
+                        iv.end = g->column_text(1);
+                        iv.returned_data = g->column_int(2) != 0;
+                        iv.note = g->column_text(3);
+                        stored.push_back(std::move(iv));
+                    }
+                }
+                c.gaps = coverage_gaps(stored);
+                out.push_back(std::move(c));
+            }
+        }
+    }
     return out;
 }
 
@@ -233,8 +333,16 @@ std::string to_geojson(const std::vector<analysis::Event>& events,
     o << "  \"coverage\": [\n";
     for (std::size_t i = 0; i < coverage.size(); ++i) {
         o << "    {\"source\": \"" << json_escape(coverage[i].source_id)
-          << "\", \"note\": \"" << json_escape(coverage[i].note) << "\"}"
-          << (i + 1 < coverage.size() ? "," : "") << "\n";
+          << "\", \"note\": \"" << json_escape(coverage[i].note) << "\"";
+        o << ", \"unobserved_intervals\": [";
+        for (std::size_t g = 0; g < coverage[i].gaps.size(); ++g) {
+            const source::CoverageInterval& iv = coverage[i].gaps[g];
+            if (g) o << ", ";
+            o << "{\"start\": \"" << json_escape(iv.start)
+              << "\", \"end\": \"" << json_escape(iv.end)
+              << "\", \"note\": \"" << json_escape(iv.note) << "\"}";
+        }
+        o << "]}" << (i + 1 < coverage.size() ? "," : "") << "\n";
     }
     o << "  ],\n  \"features\": [\n";
     for (std::size_t i = 0; i < events.size(); ++i) {
@@ -319,6 +427,21 @@ std::string to_report(const std::vector<analysis::Event>& events,
     o << "------------------------------------------------\n";
     for (const Coverage& c : coverage) {
         o << "  " << c.source_id << ": " << terminal_safe(c.note) << "\n";
+        // Temporal coverage sits beside the spatial statement, because a
+        // window with a hole in it is not observed either (REQ-8.8).
+        if (!c.gaps.empty()) {
+            o << "    NOT OBSERVED — " << c.gaps.size()
+              << (c.gaps.size() == 1 ? " sub-interval of this window returned"
+                                     : " sub-intervals of this window returned")
+              << " no data while others did:\n";
+            for (const source::CoverageInterval& iv : c.gaps) {
+                o << "      " << iv.start << " .. " << iv.end;
+                if (!iv.note.empty()) o << "  (" << terminal_safe(iv.note) << ")";
+                o << "\n";
+            }
+            o << "      Findings in these intervals are absent because nothing\n"
+                 "      was seen there, not because nothing happened.\n";
+        }
     }
     o << "\n  Absence of a detection is NOT evidence that no strike occurred.\n";
     o << "  Events below a source's detection threshold are invisible to it,\n";

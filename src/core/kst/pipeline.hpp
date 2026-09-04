@@ -23,6 +23,10 @@ struct SourceResult {
     std::string sha256;
     bool body_was_new = true;  // false when dedup matched (REQ-4.6)
     bool no_data = false;      // queried successfully, nothing in range
+    // Per-sub-interval observation record, for adapters that subdivide their
+    // request. Empty for single-request adapters.
+    std::vector<source::CoverageInterval> coverage;
+    std::vector<source::CoverageInterval> gaps;   // the unobserved subset
 };
 
 struct IngestReport {
@@ -30,6 +34,20 @@ struct IngestReport {
     int total_observations = 0;
     bool coverage_complete = true;
 };
+
+// A window is only as observed as its emptiest part. A source that returned
+// data for some sub-intervals and nothing for others has a hole in the middle
+// of a window it was otherwise answering: that is a coverage gap, and the run
+// must not claim complete coverage (REQ-1.6, REQ-8.6).
+//
+// A source that returned nothing for *every* sub-interval is a different fact.
+// It answered, and there was nothing in range — that is no_data, not a gap.
+// Treating it as one would make "coverage incomplete" the permanent condition
+// of every quiet region and destroy the signal the flag exists to carry.
+//
+// Pure and side-effect free so the rule can be tested without a network.
+std::vector<source::CoverageInterval> coverage_gaps(
+    const std::vector<source::CoverageInterval>& intervals);
 
 // Retrieve from each adapter and persist. Raw bodies are content-addressed;
 // every retrieval is recorded (REQ-4.6). Observation upsert is idempotent
@@ -46,9 +64,14 @@ std::vector<model::Observation> load_observations(db::Database& database);
 struct Coverage {
     std::string source_id;
     std::string note;
+    // Sub-intervals of the stored window that this source did not observe.
+    // Read back from the database so a report — and an offline replay
+    // (REQ-2.11) — can state them without repeating the retrieval.
+    std::vector<source::CoverageInterval> gaps;
 };
 std::vector<Coverage> coverage_notes(
-    const std::vector<std::unique_ptr<source::Adapter>>& adapters);
+    const std::vector<std::unique_ptr<source::Adapter>>& adapters,
+    db::Database* database = nullptr);
 
 // --- Output (REQ-8.2, REQ-8.3, REQ-8.4) ---
 

@@ -16,6 +16,29 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   small; uncertainty too large to separate candidate sites reports `unusable` (REQ-7.8).
 - **Depth discriminant guessed provenance from the value.** It now reads `depthType` from the
   source and records when it declines and why (REQ-5.2 strengthened).
+- **A six-day hole inside a requested window was reported as complete coverage** (issue #27,
+  DM-2026-010). NASA's `VIIRS_SNPP` stream returned zero rows for 11-15 July and 3 August 2026
+  across the whole Gulf; `coverage_complete` tracked adapter success, not whether the data
+  returned spanned the window asked for, so the run printed `coverage complete` over the days of
+  the largest strike wave in the period. Adapters that subdivide a request now report a coverage
+  interval per sub-request, persisted in schema v3 so a report — and an offline replay
+  (REQ-2.11) — can state it from stored data alone. Coverage is incomplete when a source
+  answered for some sub-intervals and not others; uniform silence stays `no_data`, because
+  flagging every quiet region would make the warning permanent and meaningless (DM-2026-010).
+  The CLI, the text report and the GeoJSON all name unobserved intervals.
+- **FIRMS queried one satellite when REQ-2.15 requires two.** `make_firms` defaulted to
+  `VIIRS_SNPP_NRT` and the CLI never overrode it, so MODIS was never ingested and one
+  satellite's outage blinded the whole run. VIIRS_SNPP and MODIS are now queried together by
+  default and merged under one source id — they share an upstream origin and must not count as
+  independent corroboration (REQ-7.3). `--firms-product` selects families explicitly. Over
+  01-20 July 2026 the single-product run reports `coverage INCOMPLETE` and names the five-day
+  hole; the default run covers it, and records that VIIRS_SNPP was the empty one.
+- **Reports built with `--offline` silently dropped their detection limitations.** `cmd_report`
+  constructed a `probe` adapter set for exactly this purpose and then never used it, so every
+  `replay` produced a report with no limitations section and no attributions — contrary to
+  REQ-8.6 and REQ-2.12. Constructing an adapter touches no network; only `fetch()` does.
+  Coverage recorded by an earlier ingest is also now surfaced even when the reporting run did
+  not configure that adapter, so a stored gap cannot be dropped by invocation shape.
 - **A report of a strike was being characterised as an observation of one** (DM-2026-009 R4).
   An event with no instrumental constituent inherited `surface-explosion` from the reporting
   source's own event type — the label asserted a characterisation nothing instrumental

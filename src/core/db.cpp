@@ -11,7 +11,7 @@ namespace {
 
 // Migrations applied in order; index i takes the schema from version i to
 // i+1 (REQ-4.2). Never edit a shipped migration — append a new one.
-constexpr std::array<const char*, 2> kMigrations = {
+constexpr std::array<const char*, 3> kMigrations = {
     // v0 -> v1: initial schema.
     R"SQL(
     -- Raw source responses, exactly as received (REQ-2.10). Append-only
@@ -124,6 +124,26 @@ constexpr std::array<const char*, 2> kMigrations = {
     ALTER TABLE observation ADD COLUMN depth_type TEXT;
     ALTER TABLE observation ADD COLUMN type_certainty TEXT;
     ALTER TABLE observation ADD COLUMN author TEXT;
+    )SQL",
+    // v2 -> v3: per-sub-interval coverage. A source that answers for twelve
+    // chunks and returns nothing for two has a hole in the middle of the
+    // window, and until this table existed there was nowhere to say so — the
+    // run reported complete coverage (issue #27). Persisted rather than held
+    // in memory because the report and the offline replay of REQ-2.11 must be
+    // able to state it from stored data alone.
+    R"SQL(
+    CREATE TABLE coverage_interval (
+        id            INTEGER PRIMARY KEY,
+        source_id     TEXT    NOT NULL,
+        start_date    TEXT    NOT NULL,   -- ISO 8601 UTC date, inclusive
+        end_date      TEXT    NOT NULL,   -- inclusive
+        returned_data INTEGER NOT NULL,
+        note          TEXT,
+        recorded_at   TEXT    NOT NULL,
+        run_id        INTEGER REFERENCES run(id),
+        UNIQUE(source_id, start_date, end_date)
+    );
+    CREATE INDEX idx_coverage_source ON coverage_interval(source_id, start_date);
     )SQL",
 };
 
