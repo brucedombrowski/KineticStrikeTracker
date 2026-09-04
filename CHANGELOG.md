@@ -16,6 +16,18 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   small; uncertainty too large to separate candidate sites reports `unusable` (REQ-7.8).
 - **Depth discriminant guessed provenance from the value.** It now reads `depthType` from the
   source and records when it declines and why (REQ-5.2 strengthened).
+- **A single coarse report could bridge unrelated detections into one event** (issue #29,
+  DM-2026-009 R1/R2, approved). Non-instrumental observations joined the same transitive
+  association relation as instrumental ones, over a 100 km / 24 h window — so one report chained
+  38 gas-flare pixels and two reported strikes 77 km apart into a single "high confidence
+  surface explosion" positioned 47 km from one and 121 km from the other. Event formation is now
+  instrumental-only; a report is matched against the frozen instrumental partition and attaches
+  only when it matches exactly one cluster. Matching several corroborates none — the report
+  corresponds to at most one, so choosing the nearest would assert a correspondence the evidence
+  does not establish (REQ-11.4). The verdict is emitted as `report_association` in both the text
+  report and the GeoJSON. Over the Hormuz window the nine curated entries resolve as 6
+  reported-only and 3 ambiguous, and Larak Island becomes a known strike with confirmed
+  satellite coverage and no attributable detection — the measurement the dataset was added for.
 - **Two pixels of one gas flare reported high confidence that an event occurred.**
   `instrumental_sources` and `reporting_sources` counted observations, while `occurrence_band`
   and `characterisation_band` consumed them as counts of independent sources — so a single

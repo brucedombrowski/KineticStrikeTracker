@@ -1,7 +1,8 @@
 # DM-2026-009 — What a Report May Contribute to an Event
 
 - **Date:** 2026-09-03
-- **Status:** **Draft — pending human review**
+- **Status:** **Approved**
+- **Decided by:** Bruce Dombrowski ("approve dm-009, implement r1 and r2")
 - **Drafted by:** agent, from investigation of the 2026 Strait of Hormuz campaign
 - **Resolves:** issue #29 · **Affects:** REQ-7.3 (amend), REQ-6.7 (proposed), REQ-7.9 (proposed)
 
@@ -117,17 +118,46 @@ is the point of the rule.
 
 ## Implementation status
 
-**R3 is implemented** (`analysis.cpp`, commit on this branch), at Bruce's direction ahead of
-full adoption of this memorandum. It was separable because it is a defect against the existing
-REQ-7.3 rather than a change to it: the code did not do what its own comment said.
+| Rule | State |
+|---|---|
+| R1 — instrumental-only event formation | **implemented** |
+| R2 — attach with ambiguity | **implemented** |
+| R3 — corroboration by distinct source | **implemented** |
+| R4 — per-axis derivation | **not implemented** |
 
-Measured over the Hormuz validation window: events at `occurrence=high` fell from **1969 to
-16**. Fourteen are ISC and USGS reporting the same earthquake — correct corroboration by two
-distinct catalogs. The remaining two are the seed-bridged events, which stay high through
-`instrumental_sources == 1 && independent_sources >= 2`; they need **R1 and R2** and are the
-measure of what bridging alone still costs.
+**R3** was taken first, separately: it was a defect against REQ-7.3 as written rather than a
+change to it. Events at `occurrence=high` fell from 1969 to 16 over the Hormuz window.
 
-**R1, R2 and R4 remain undecided** and unimplemented.
+**R1 and R2** then removed the two remaining false highs. Reports no longer enter the
+association relation, so none can bridge unrelated detections; each is matched against the
+frozen instrumental partition and attaches only on a unique match. Over the Hormuz window the
+nine curated entries resolve as **6 reported-only** and **3 ambiguous**, none attached.
+
+Larak is now the case the dataset was added to obtain:
+
+```
+2026-08-30T23:00:00.000Z   [surface-explosion]
+  position (derived): 26.850, 56.360
+  confidence: occurrence=low  location=high  characterisation=low
+  independent sources: 1 (instrumental 0)
+  report association:
+    * seed:larak-island-2026-08-30 ambiguous — matches 7 instrumental clusters
+      within the reporting window, so corroborates none. Candidates: ...
+```
+
+Its own time, its own position, its own ±5 km, and an explicit record of the seven gas-flare
+clusters it declined to claim as corroboration. A known strike with confirmed satellite
+coverage and no attributable instrumental detection — a measured point on the detection floor.
+
+Emitting the verdict required a new `Event::report_association`, carried in both the text
+report and the GeoJSON. The pre-existing `association_reasons` remains unemitted: it holds one
+line per associated pair, so a 38-member flare cluster produces hundreds, and turning it on
+wholesale would be a separate decision about report volume.
+
+**R4 remains open**, and is now the most visible gap: a reported-only event still carries
+`[surface-explosion]`, as the Larak block above shows. The label asserts a characterisation no
+instrumental evidence supports. `best_location_uncertainty_km` also still minimises across all
+constituents, which matters whenever a report does attach.
 
 ## Proposed requirement changes
 

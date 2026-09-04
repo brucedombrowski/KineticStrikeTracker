@@ -68,6 +68,10 @@ struct Event {
     double longitude = 0.0;
     std::vector<model::Observation> constituents;
     std::vector<std::string> association_reasons;  // REQ-6.4
+    // How each non-instrumental constituent related to the instrumental
+    // partition: attached, reported-only, or ambiguous (DM-2026-009 R2).
+    // Empty when the event has no report constituent.
+    std::vector<std::string> report_association;
     Discrimination discrimination;
     Confidence confidence;
 };

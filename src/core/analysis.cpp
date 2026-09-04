@@ -223,6 +223,18 @@ bool same_physical_event(const model::Observation& a,
     return dt <= s_limit && dkm <= km_limit;
 }
 
+// Members of a frozen cluster, by root. Linear scan over a handful of
+// clusters; kept simple because the partition is small relative to obs.
+const std::vector<std::size_t>& frozen_members(
+    const std::vector<std::pair<std::size_t, std::vector<std::size_t>>>& frozen,
+    std::size_t root) {
+    for (const auto& [r, members] : frozen) {
+        if (r == root) return members;
+    }
+    static const std::vector<std::size_t> empty;
+    return empty;
+}
+
 std::string event_uid_for(const std::vector<model::Observation>& group) {
     // Derived from the sorted constituent identifiers, so the identifier is
     // a pure function of membership and independent of input order (REQ-6.3).
@@ -255,6 +267,15 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
     // Union-find over the association relation. Because the relation is
     // symmetric and the input is canonically ordered, the resulting
     // partition is unique regardless of ingestion order.
+    // R1 (DM-2026-009): event formation is instrumental-only. A report is not
+    // positional evidence, and admitting one to the association relation lets
+    // it bridge unrelated detections transitively — one coarse report chained
+    // 38 gas-flare pixels and two reported strikes 77 km apart into a single
+    // "high confidence surface explosion" (issue #29).
+    const auto instrumental = [](const model::Observation& o) {
+        return o.source_class == model::SourceClass::Instrumental;
+    };
+
     std::vector<std::size_t> parent(obs.size());
     for (std::size_t i = 0; i < parent.size(); ++i) parent[i] = i;
     std::function<std::size_t(std::size_t)> find =
@@ -262,7 +283,9 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
 
     std::vector<std::vector<std::string>> reasons(obs.size());
     for (std::size_t i = 0; i < obs.size(); ++i) {
+        if (!instrumental(obs[i])) continue;
         for (std::size_t j = i + 1; j < obs.size(); ++j) {
+            if (!instrumental(obs[j])) continue;
             if (!same_physical_event(obs[i], obs[j], w)) continue;
             const std::size_t ri = find(i), rj = find(j);
             if (ri != rj) parent[ri] = rj;
@@ -276,7 +299,88 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
     }
 
     std::map<std::size_t, std::vector<std::size_t>> groups;
-    for (std::size_t i = 0; i < obs.size(); ++i) groups[find(i)].push_back(i);
+    for (std::size_t i = 0; i < obs.size(); ++i) {
+        if (instrumental(obs[i])) groups[find(i)].push_back(i);
+    }
+
+    // R2 (DM-2026-009): a report attaches to exactly one instrumental cluster,
+    // or to none at all. Matching runs against this frozen copy of the
+    // partition, never against clusters as they are being amended, so the
+    // outcome cannot depend on the order reports are considered (REQ-1.2).
+    const std::vector<std::pair<std::size_t, std::vector<std::size_t>>> frozen(
+        groups.begin(), groups.end());
+
+    // The R2 verdict, keyed by the group each report lands in.
+    std::map<std::size_t, std::vector<std::string>> assoc;
+
+    for (std::size_t r = 0; r < obs.size(); ++r) {
+        if (instrumental(obs[r])) continue;
+        std::vector<std::size_t> matched;
+        for (const auto& [root, members] : frozen) {
+            for (std::size_t m : members) {
+                if (same_physical_event(obs[r], obs[m], w)) {
+                    matched.push_back(root);
+                    break;
+                }
+            }
+        }
+
+        if (matched.size() == 1) {
+            groups[matched.front()].push_back(r);
+            char buf[256];
+            std::snprintf(buf, sizeof(buf),
+                          "%s:%s attached to the one instrumental cluster "
+                          "within the reporting window",
+                          obs[r].source_id.c_str(), obs[r].native_id.c_str());
+            reasons[matched.front()].emplace_back(buf);
+            assoc[matched.front()].emplace_back(
+                obs[r].source_id + ":" + obs[r].native_id +
+                " attached — the one instrumental cluster within the "
+                "reporting window");
+            continue;
+        }
+
+        // Zero matches, or several. Several is the case that matters: the
+        // report corresponds to at most one of them. Corroborating all would
+        // inflate every candidate, and corroborating the nearest would assert
+        // a correspondence the evidence does not establish, so it corroborates
+        // none and the ambiguity is carried into the output (REQ-11.4).
+        groups[r].push_back(r);
+        if (matched.empty()) {
+            reasons[r].emplace_back(
+                "no instrumental cluster within the reporting window; stands "
+                "as a reported-only event located by its own uncertainty");
+            assoc[r].emplace_back(
+                obs[r].source_id + ":" + obs[r].native_id +
+                " reported-only — no instrumental cluster within the "
+                "reporting window; located by its own stated uncertainty");
+        } else {
+            std::vector<std::string> candidates;
+            for (std::size_t root : matched) {
+                const model::Observation& first =
+                    obs[frozen_members(frozen, root).front()];
+                char buf[128];
+                std::snprintf(buf, sizeof(buf), "%.3f,%.3f@%s",
+                              first.latitude ? *first.latitude : 0.0,
+                              first.longitude ? *first.longitude : 0.0,
+                              first.origin_time.c_str());
+                candidates.emplace_back(buf);
+            }
+            std::sort(candidates.begin(), candidates.end());
+            std::string joined;
+            for (const std::string& c : candidates) {
+                if (!joined.empty()) joined += "; ";
+                joined += c;
+            }
+            const std::string note =
+                obs[r].source_id + ":" + obs[r].native_id + " ambiguous — " +
+                "matches " + std::to_string(matched.size()) +
+                " instrumental clusters within the reporting window, so "
+                "corroborates none. Candidates: " + joined;
+            reasons[r].emplace_back(note);
+            assoc[r].emplace_back(note);
+        }
+    }
 
     std::vector<Event> events;
     events.reserve(groups.size());
@@ -284,6 +388,9 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
         Event e;
         for (std::size_t idx : members) e.constituents.push_back(obs[idx]);
         e.association_reasons = reasons[root];
+        if (auto it = assoc.find(root); it != assoc.end()) {
+            e.report_association = it->second;
+        }
         e.event_uid = event_uid_for(e.constituents);
         e.origin_time = e.constituents.front().origin_time;
 

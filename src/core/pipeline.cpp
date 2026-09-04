@@ -253,6 +253,14 @@ std::string to_geojson(const std::vector<analysis::Event>& events,
           << e.confidence.characterisation_band() << "\"},\n";
         o << "        \"independent_sources\": "
           << e.confidence.independent_sources << ",\n";
+        if (!e.report_association.empty()) {
+            o << "        \"report_association\": [";
+            for (std::size_t j = 0; j < e.report_association.size(); ++j) {
+                if (j) o << ", ";
+                o << "\"" << json_escape(e.report_association[j]) << "\"";
+            }
+            o << "],\n";
+        }
         o << "        \"constituents\": [\n";
         for (std::size_t j = 0; j < e.constituents.size(); ++j) {
             const auto& c = e.constituents[j];
@@ -353,6 +361,12 @@ std::string to_report(const std::vector<analysis::Event>& events,
                 o << "\n      " << terminal_safe(c.description);
             }
             o << "\n";
+        }
+        if (!e.report_association.empty()) {
+            o << "  report association:\n";
+            for (const auto& r : e.report_association) {
+                o << "    * " << terminal_safe(r) << "\n";
+            }
         }
         if (!e.discrimination.reasons.empty()) {
             o << "  discrimination reasoning:\n";
