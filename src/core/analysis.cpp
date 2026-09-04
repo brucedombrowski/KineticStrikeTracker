@@ -15,6 +15,7 @@ const char* to_string(Classification c) {
         case Classification::NaturalEarthquake: return "natural-earthquake";
         case Classification::SurfaceExplosion:  return "surface-explosion";
         case Classification::IndustrialBlast:   return "industrial-blast";
+        case Classification::ReportedOnly:      return "reported-only";
         case Classification::Indeterminate:     return "indeterminate";
     }
     return "indeterminate";
@@ -485,14 +486,6 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
                     distinct_reporting.insert(o.source_id);
                     break;
             }
-            if (o.location_uncertainty_km) {
-                if (e.confidence.best_location_uncertainty_km < 0.0 ||
-                    *o.location_uncertainty_km <
-                        e.confidence.best_location_uncertainty_km) {
-                    e.confidence.best_location_uncertainty_km =
-                        *o.location_uncertainty_km;
-                }
-            }
             if (o.reported_event_type == "earthquake" &&
                 e.discrimination.classification == Classification::SurfaceExplosion) {
                 e.confidence.has_disconfirming_evidence = true;  // REQ-7.6
@@ -503,6 +496,43 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
                 e.confidence.any_source_type_suspected = true;
             }
         }
+        // R4 (DM-2026-009): location confidence derives from positional
+        // evidence. An attached report neither sharpens nor widens an
+        // instrumentally located event — it corroborates, it does not fix a
+        // position, and taking the minimum across all constituents let a
+        // +/-60 km report inherit "high" from a sub-kilometre pixel. Where no
+        // instrumental constituent exists the report is the only thing
+        // locating the event, and its own stated uncertainty governs.
+        //
+        // An instrumentally located event whose constituents publish no
+        // uncertainty stays "unknown" rather than borrowing a report's number:
+        // an unpublished uncertainty is not a small one (REQ-7.8).
+        const bool has_instrumental = !distinct_instrumental.empty();
+        for (const auto& o : e.constituents) {
+            if (has_instrumental && !instrumental(o)) continue;
+            if (!o.location_uncertainty_km) continue;
+            if (e.confidence.best_location_uncertainty_km < 0.0 ||
+                *o.location_uncertainty_km <
+                    e.confidence.best_location_uncertainty_km) {
+                e.confidence.best_location_uncertainty_km =
+                    *o.location_uncertainty_km;
+            }
+        }
+
+        // R4 (DM-2026-009): an event with no instrumental constituent may not
+        // carry an instrumental verdict. Whatever the discriminants concluded
+        // from a source's own reported type, "a report of a strike" is not
+        // "an observation of a surface explosion" (REQ-11.4).
+        if (!has_instrumental &&
+            e.discrimination.classification != Classification::ReportedOnly) {
+            e.discrimination.reasons.emplace_back(
+                std::string("classification withheld: no instrumental "
+                            "constituent to characterise the event; the ") +
+                to_string(e.discrimination.classification) +
+                " verdict rests on the reporting source's own event type");
+            e.discrimination.classification = Classification::ReportedOnly;
+        }
+
         e.confidence.independent_sources = static_cast<int>(distinct_sources.size());
         e.confidence.instrumental_sources =
             static_cast<int>(distinct_instrumental.size());

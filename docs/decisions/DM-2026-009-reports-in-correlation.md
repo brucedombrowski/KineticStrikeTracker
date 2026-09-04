@@ -2,7 +2,7 @@
 
 - **Date:** 2026-09-03
 - **Status:** **Approved**
-- **Decided by:** Bruce Dombrowski ("approve dm-009, implement r1 and r2")
+- **Decided by:** Bruce Dombrowski ("approve dm-009, implement r1 and r2", then "implement r4")
 - **Drafted by:** agent, from investigation of the 2026 Strait of Hormuz campaign
 - **Resolves:** issue #29 · **Affects:** REQ-7.3 (amend), REQ-6.7 (proposed), REQ-7.9 (proposed)
 
@@ -123,7 +123,7 @@ is the point of the rule.
 | R1 — instrumental-only event formation | **implemented** |
 | R2 — attach with ambiguity | **implemented** |
 | R3 — corroboration by distinct source | **implemented** |
-| R4 — per-axis derivation | **not implemented** |
+| R4 — per-axis derivation | **implemented** |
 
 **R3** was taken first, separately: it was a defect against REQ-7.3 as written rather than a
 change to it. Events at `occurrence=high` fell from 1969 to 16 over the Hormuz window.
@@ -154,10 +154,33 @@ report and the GeoJSON. The pre-existing `association_reasons` remains unemitted
 line per associated pair, so a 38-member flare cluster produces hundreds, and turning it on
 wholesale would be a separate decision about report volume.
 
-**R4 remains open**, and is now the most visible gap: a reported-only event still carries
-`[surface-explosion]`, as the Larak block above shows. The label asserts a characterisation no
-instrumental evidence supports. `best_location_uncertainty_km` also still minimises across all
-constituents, which matters whenever a report does attach.
+**R4** completes the set. A new `Classification::ReportedOnly` is assigned to any event with no
+instrumental constituent, and the withheld verdict is recorded rather than silently dropped:
+
+```
+2026-08-30T23:00:00.000Z   [reported-only]
+  confidence: occurrence=low  location=high  characterisation=low
+  discrimination reasoning:
+    * classification withheld: no instrumental constituent to characterise the
+      event; the surface-explosion verdict rests on the reporting source's own
+      event type
+```
+
+All nine curated entries moved from `[surface-explosion]` to `[reported-only]`.
+
+`best_location_uncertainty_km` now minimises over instrumental constituents when the event has
+any, and over the report itself when it has none. Two consequences worth stating: an
+instrumentally located event whose constituents publish no uncertainty stays `unknown` rather
+than borrowing an attached report's number, and a reported-only event keeps its own honest
+bound — which is why Larak still reports `location=high` from its ±5 km island centroid.
+
+On the Hormuz window R4's location half changes nothing measurable, because nothing attached:
+all nine entries are reported-only or ambiguous. It is implemented against the attach case
+rather than demonstrated by it.
+
+`reported-only` also received its own colour in the map viewer. Falling through to the
+`indeterminate` grey would have made a report with no instrumental backing look like an
+instrumental detection that could not be classified — the confusion REQ-8.8 exists to prevent.
 
 ## Proposed requirement changes
 

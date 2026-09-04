@@ -9,11 +9,13 @@
      Reads ../out/events.geojson produced by `kst report`. */
   :root { --bg:#f7f7fa; --fg:#1a1a2e; --muted:#5a5a72; --line:#d0d0dc;
           --sea:#e6ecf2; --land:#ffffff; --panel:#ffffff;
-          --expl:#c02020; --quake:#2a6fb0; --indet:#8a8a9c; --blast:#b07a00; }
+          --expl:#c02020; --quake:#2a6fb0; --indet:#8a8a9c; --blast:#b07a00;
+          --report:#7a4fb5; }
   @media (prefers-color-scheme: dark) {
     :root { --bg:#12121a; --fg:#e8e8f0; --muted:#9a9ab0; --line:#33334a;
             --sea:#0d1620; --land:#1c1c28; --panel:#1a1a24;
-            --expl:#ff6b6b; --quake:#6fb3ff; --indet:#8a8a9c; --blast:#e8b34d; }
+            --expl:#ff6b6b; --quake:#6fb3ff; --indet:#8a8a9c; --blast:#e8b34d;
+            --report:#b18aff; }
   }
   *{box-sizing:border-box} html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--fg);
@@ -48,6 +50,9 @@
   .natural-earthquake{color:var(--quake);fill:var(--quake)}
   .industrial-blast{color:var(--blast);fill:var(--blast)}
   .indeterminate{color:var(--indet);fill:var(--indet)}
+  /* A report with no instrumental constituent is not an unclassified
+     detection — it must not read as one on the map (REQ-8.8). */
+  .reported-only{color:var(--report);fill:var(--report)}
   #panel{position:absolute;top:.75rem;right:.75rem;width:22rem;max-width:calc(100% - 1.5rem);
          max-height:calc(100% - 1.5rem);overflow:auto;background:var(--panel);
          border:1px solid var(--line);border-radius:10px;padding:.8rem;
@@ -351,7 +356,7 @@ function legend(){
     const s=document.createElement("span"); s.className="sw";
     s.style.background=getComputedStyle(document.documentElement)
       .getPropertyValue(k==="surface-explosion"?"--expl":k==="natural-earthquake"?"--quake":
-                        k==="industrial-blast"?"--blast":"--indet");
+                        k==="industrial-blast"?"--blast":k==="reported-only"?"--report":"--indet");
     d.append(s,document.createTextNode(`${k.replace(/-/g," ")} — ${v}`)); L.append(d);
   }
   const note=document.createElement("div");

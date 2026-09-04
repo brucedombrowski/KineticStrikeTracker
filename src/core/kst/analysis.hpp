@@ -18,6 +18,7 @@ enum class Classification {
     NaturalEarthquake,
     SurfaceExplosion,   // consistent with a surface/near-surface source
     IndustrialBlast,    // quarry/mine pattern
+    ReportedOnly,       // reported, with no instrumental constituent to characterise it
     Indeterminate,
 };
 

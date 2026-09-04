@@ -16,6 +16,16 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   small; uncertainty too large to separate candidate sites reports `unusable` (REQ-7.8).
 - **Depth discriminant guessed provenance from the value.** It now reads `depthType` from the
   source and records when it declines and why (REQ-5.2 strengthened).
+- **A report of a strike was being characterised as an observation of one** (DM-2026-009 R4).
+  An event with no instrumental constituent inherited `surface-explosion` from the reporting
+  source's own event type — the label asserted a characterisation nothing instrumental
+  supported. Such events now carry a new `reported-only` classification, and the withheld
+  verdict is recorded in the discrimination reasoning rather than silently dropped. Location
+  confidence likewise now derives from instrumental constituents where any exist, so an
+  attached report can neither sharpen nor widen an instrumentally located event, and an event
+  located only by a report keeps that report's own stated bound. `reported-only` has its own
+  colour in the map viewer; rendering it as `indeterminate` grey would have made an
+  unsupported report look like an instrumental detection that could not be classified (REQ-8.8).
 - **A single coarse report could bridge unrelated detections into one event** (issue #29,
   DM-2026-009 R1/R2, approved). Non-instrumental observations joined the same transitive
   association relation as instrumental ones, over a 100 km / 24 h window — so one report chained
