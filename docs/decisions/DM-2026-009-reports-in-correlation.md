@@ -115,6 +115,20 @@ is the point of the rule.
 - `data/seed/hormuz-2026.json` becomes usable for published reporting; until then it should
   not be.
 
+## Implementation status
+
+**R3 is implemented** (`analysis.cpp`, commit on this branch), at Bruce's direction ahead of
+full adoption of this memorandum. It was separable because it is a defect against the existing
+REQ-7.3 rather than a change to it: the code did not do what its own comment said.
+
+Measured over the Hormuz validation window: events at `occurrence=high` fell from **1969 to
+16**. Fourteen are ISC and USGS reporting the same earthquake — correct corroboration by two
+distinct catalogs. The remaining two are the seed-bridged events, which stay high through
+`instrumental_sources == 1 && independent_sources >= 2`; they need **R1 and R2** and are the
+measure of what bridging alone still costs.
+
+**R1, R2 and R4 remain undecided** and unimplemented.
+
 ## Proposed requirement changes
 
 - **REQ-7.3 (amend)** — state that instrumental corroboration is counted by distinct source

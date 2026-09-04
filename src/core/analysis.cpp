@@ -353,12 +353,21 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
         // Confidence factors. Sources sharing an upstream origin are not
         // independent, so independence is counted by distinct source id
         // (REQ-7.3) — a coarse proxy, and the honest one available here.
+        //
+        // The per-class counts obey the same rule (DM-2026-009 R3). They were
+        // once observation counts, which meant a catalog publishing forty
+        // detections of one gas flare read as forty corroborating instrumental
+        // sources: two pixels of a single satellite overpass were enough to
+        // report high confidence that an event occurred. A source does not
+        // corroborate itself by reporting twice.
         std::set<std::string> distinct_sources;
+        std::set<std::string> distinct_instrumental;
+        std::set<std::string> distinct_reporting;
         for (const auto& o : e.constituents) {
             distinct_sources.insert(o.source_id);
             switch (o.source_class) {
                 case model::SourceClass::Instrumental:
-                    ++e.confidence.instrumental_sources;
+                    distinct_instrumental.insert(o.source_id);
                     break;
                 case model::SourceClass::Government:
                     e.confidence.has_government_source = true;
@@ -366,7 +375,7 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
                 case model::SourceClass::News:
                 case model::SourceClass::Social:
                 case model::SourceClass::CuratedDataset:
-                    ++e.confidence.reporting_sources;
+                    distinct_reporting.insert(o.source_id);
                     break;
             }
             if (o.location_uncertainty_km) {
@@ -388,6 +397,9 @@ std::vector<Event> correlate(std::vector<model::Observation> obs,
             }
         }
         e.confidence.independent_sources = static_cast<int>(distinct_sources.size());
+        e.confidence.instrumental_sources =
+            static_cast<int>(distinct_instrumental.size());
+        e.confidence.reporting_sources = static_cast<int>(distinct_reporting.size());
         events.push_back(std::move(e));
     }
 

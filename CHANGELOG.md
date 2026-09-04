@@ -16,6 +16,15 @@ Versioning follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   small; uncertainty too large to separate candidate sites reports `unusable` (REQ-7.8).
 - **Depth discriminant guessed provenance from the value.** It now reads `depthType` from the
   source and records when it declines and why (REQ-5.2 strengthened).
+- **Two pixels of one gas flare reported high confidence that an event occurred.**
+  `instrumental_sources` and `reporting_sources` counted observations, while `occurrence_band`
+  and `characterisation_band` consumed them as counts of independent sources — so a single
+  satellite overpass detecting one flare twice read as two corroborating instrumental sources.
+  The comment three lines above the increment stated the rule the code broke: independence is
+  counted by distinct source id (REQ-7.3). Now counted that way, per DM-2026-009 R3. Over the
+  Hormuz validation window this drops events asserted at `occurrence=high` from **1969 to 16**:
+  14 genuine ISC+USGS pairs on the same earthquake, and 2 that remain wrong for a different
+  reason still open as issue #29. Output remains byte-identical across runs (REQ-1.2).
 - **The curated-seed format could not express how well an entry was located.** The parser read
   every field of the observation model except `location_uncertainty_km`, so a named 5 km island
   and a 120 km island were indistinguishable in precision. Absent that field REQ-7.8 correctly
